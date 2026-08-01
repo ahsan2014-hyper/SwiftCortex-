@@ -81,27 +81,67 @@ border-radius:10px;
 
 </div>
 
+
 <script>
+const API_KEY = AQ.Ab8RN6KQFZK9KWVUpxpn98LVXILnqxgW5W8W3RYSKPEZLf3mIQ
 
-function chat(){
-let text=document.getElementById("prompt").value;
-document.getElementById("output").innerHTML=
-"<h3>SwiftCortex</h3>"+text;
+async function chat() {
+  const text = document.getElementById("prompt").value;
+  const output = document.getElementById("output");
+
+  if (!text.trim()) {
+    output.innerHTML = "Please enter a message.";
+    return;
+  }
+
+  output.innerHTML = "Thinking...";
+
+  try {
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + API_KEY,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: text
+                }
+              ]
+            }
+          ]
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    const reply =
+      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "No response received.";
+
+    output.innerHTML = "<h3>SwiftCortex AI</h3><p>" + reply + "</p>";
+
+  } catch (err) {
+    output.innerHTML = "Error: " + err.message;
+  }
 }
 
-function translateText(){
-alert("Live Translate Coming Soon");
+function translateText() {
+  alert("Live Translate Coming Soon");
 }
 
-function voice(){
-alert("Voice Assistant Ready");
+function voice() {
+  alert("Voice Assistant Ready");
 }
 
-function calling(){
-alert("AI Calling Ready");
+function calling() {
+  alert("AI Calling Ready");
 }
-
 </script>
-
 </body>
 </html>           
