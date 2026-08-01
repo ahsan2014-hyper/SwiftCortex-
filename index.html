@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SwiftCortex AI</title>
+
+<style>
+body{
+margin:0;
+font-family:Arial,sans-serif;
+background:#0b1220;
+color:white;
+text-align:center;
+}
+
+header{
+background:#111827;
+padding:20px;
+font-size:30px;
+font-weight:bold;
+color:#00e5ff;
+}
+
+.container{
+padding:20px;
+}
+
+textarea{
+width:90%;
+height:120px;
+border-radius:10px;
+padding:10px;
+font-size:16px;
+}
+
+button{
+margin:10px;
+padding:12px 20px;
+font-size:18px;
+border:none;
+border-radius:10px;
+background:#00e5ff;
+color:black;
+font-weight:bold;
+}
+
+#output{
+margin-top:20px;
+padding:15px;
+background:#1e293b;
+border-radius:10px;
+}
+</style>
+
+</head>
+
+<body>
+
+<header>
+⚡ SwiftCortex AI
+</header>
+
+<div class="container">
+
+<h2>AI Assistant</h2>
+
+<textarea id="prompt" placeholder="Ask anything..."></textarea>
+
+<br>
+
+<button onclick="chat()">Chat</button>
+
+<button onclick="translateText()">Translate</button>
+
+<button onclick="voice()">🎤 Voice</button>
+
+<button onclick="calling()">📞 Calling</button>
+
+<div id="output"></div>
+
+</div>
+
+<script>
+
+function chat(){
+let text=document.getElementById("prompt").value;
+document.getElementById("output").innerHTML=
+"<h3>SwiftCortex</h3>"+text;
+}
+
+function translateText(){
+alert("Live Translate Coming Soon");
+}
+
+function voice(){
+alert("Voice Assistant Ready");
+}
+
+function calling(){
+alert("AI Calling Ready");
+}
+
+</script>
+
+</body>
+</html>           
