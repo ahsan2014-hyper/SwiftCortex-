@@ -67,7 +67,7 @@ function addMessage(message,type){
 
     div.className=type+" message";
 
-    div.innerHTML=message.replace(/\n/g,"<br>");
+    div.textContent = message;
 
     chatArea.appendChild(div);
 
