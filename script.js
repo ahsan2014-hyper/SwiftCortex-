@@ -6,12 +6,25 @@ const chatArea = document.getElementById("chatArea");
 const typing = document.getElementById("typing");
 
 sendBtn.addEventListener("click", sendMessage);
+prompt.addEventListener("keydown", function(e){
 
+    if(e.key==="Enter" && !e.shiftKey){
+
+        e.preventDefault();
+
+        sendMessage();
+
+    }
+
+});
 async function sendMessage() {
 
     const text = prompt.value.trim();
 
-    if(text==="") return;
+if(text==="") return;
+
+sendBtn.disabled = true;
+sendBtn.innerHTML = "⏳ Thinking...";
 
     addMessage(text,"user");
 
@@ -43,7 +56,9 @@ async function sendMessage() {
 
         const data=await response.json();
 
-        typing.style.display="none";
+        typing.style.display = "none";
+sendBtn.disabled = false;
+sendBtn.innerHTML = "➜ Send";
 
         const reply=
         data.candidates?.[0]?.content?.parts?.[0]?.text
@@ -51,11 +66,12 @@ async function sendMessage() {
 
         addMessage(reply,"bot");
 
-    }catch(e){
+}catch(e){
 
-        typing.style.display="none";
-
-        addMessage("Error : "+e.message,"bot");
+    typing.style.display = "none";
+sendBtn.disabled = false;
+sendBtn.innerHTML = "➜ Send";
+    addMessage("Error : " + e.message, "bot");
 
     }
 
@@ -71,6 +87,7 @@ function addMessage(message,type){
 
     chatArea.appendChild(div);
 
-    chatArea.scrollTop=chatArea.scrollHeight;
+    chatArea.scrollTop = chatArea.scrollHeight;
 
-          }
+}
+
