@@ -49,7 +49,7 @@ console.log(JSON.stringify(data));
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        text: data.choices[0].message.content
+        text: data.choices?.[0]?.message?.content || "No response from AI"
       })
     };
 
