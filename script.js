@@ -1,4 +1,22 @@
+const uploadBtn = document.getElementById("uploadBtn");
+const imageInput = document.getElementById("imageInput");
 
+uploadBtn.addEventListener("click", () => {
+    imageInput.click();
+});
+
+imageInput.addEventListener("change", () => {
+
+    const file = imageInput.files[0];
+
+    if(file){
+        addMessage(
+            "📷 Selected image: " + file.name,
+            "user"
+        );
+    }
+
+});
 
 const sendBtn = document.getElementById("sendBtn");
 const prompt = document.getElementById("prompt");
