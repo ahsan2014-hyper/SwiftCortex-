@@ -1,25 +1,7 @@
 exports.handler = async (event) => {
   try {
 
-    const { message, image } = JSON.parse(event.body);
-
-    const content = [];
-
-    if (message) {
-      content.push({
-        type: "text",
-        text: message
-      });
-    }
-
-    if (image) {
-      content.push({
-        type: "image_url",
-        image_url: {
-          url: image
-        }
-      });
-    }
+    const { message } = JSON.parse(event.body);
 
     const response = await fetch(
       "https://api.groq.com/openai/v1/chat/completions",
@@ -30,11 +12,11 @@ exports.handler = async (event) => {
           "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
         },
         body: JSON.stringify({
-          model: "llama-3.2-11b-vision-preview",
+          model: "llama-3.1-8b-instant",
           messages: [
             {
               role: "user",
-              content: content
+              content: message
             }
           ]
         })
@@ -42,7 +24,9 @@ exports.handler = async (event) => {
     );
 
     const data = await response.json();
-console.log(JSON.stringify(data));
+
+    console.log(JSON.stringify(data));
+
     return {
       statusCode: 200,
       headers: {
