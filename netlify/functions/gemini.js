@@ -1,7 +1,7 @@
 exports.handler = async (event) => {
   try {
 
-    const { message } = JSON.parse(event.body);
+    const { message, image } = JSON.parse(event.body);
 
     const response = await fetch(
       "https://api.groq.com/openai/v1/chat/completions",
