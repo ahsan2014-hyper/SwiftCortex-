@@ -1,4 +1,4 @@
-const API_KEY = "YOUR_GEMINI_API_KEY";
+
 
 const sendBtn = document.getElementById("sendBtn");
 const prompt = document.getElementById("prompt");
@@ -34,25 +34,15 @@ sendBtn.innerHTML = "⏳ Thinking...";
 
     try{
 
-        const response = await fetch(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="+API_KEY,
-        {
-            method:"POST",
-            headers:{
-                "Content-Type":"application/json"
-            },
-            body:JSON.stringify({
-                contents:[
-                    {
-                        parts:[
-                            {
-                                text:text
-                            }
-                        ]
-                    }
-                ]
-            })
-        });
+        const response = await fetch("/.netlify/functions/gemini", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+        message: text
+    })
+});
 
         const data=await response.json();
 
