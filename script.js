@@ -10,10 +10,22 @@ imageInput.addEventListener("change", () => {
     const file = imageInput.files[0];
 
     if(file){
-        addMessage(
-            "📷 Selected image: " + file.name,
-            "user"
-        );
+
+        const reader = new FileReader();
+
+        reader.onload = function(){
+
+            window.selectedImage = reader.result;
+
+            addMessage(
+                "📷 Image selected: " + file.name,
+                "user"
+            );
+
+        };
+
+        reader.readAsDataURL(file);
+
     }
 
 });
@@ -37,9 +49,11 @@ prompt.addEventListener("keydown", function(e){
 });
 async function sendMessage() {
 
-    const text = prompt.value.trim();
+ const text = prompt.value.trim();
 
-if(text==="") return;
+if(text === "" && !window.selectedImage) return;   
+
+
 
 sendBtn.disabled = true;
 sendBtn.innerHTML = "⏳ Thinking...";
@@ -58,8 +72,9 @@ sendBtn.innerHTML = "⏳ Thinking...";
         "Content-Type": "application/json"
     },
     body: JSON.stringify({
-        message: text
-    })
+    message: text,
+    image: window.selectedImage || null
+})
 });
 
         const data=await response.json();
