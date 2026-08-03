@@ -50,9 +50,7 @@ sendBtn.innerHTML = "⏳ Thinking...";
 sendBtn.disabled = false;
 sendBtn.innerHTML = "➜ Send";
 
-        const reply=
-        data.candidates?.[0]?.content?.parts?.[0]?.text
-        || "No response.";
+        const reply = data.text || "No response.";
 
         addMessage(reply,"bot");
 
