@@ -49,7 +49,10 @@ exports.handler = async (event) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        text: data.choices?.[0]?.message?.content || "No response from AI"
+        text:
+  data.choices?.[0]?.message?.content ||
+  data.error?.message ||
+  "No response from AI"
       })
     };
 
