@@ -1,4 +1,10 @@
 export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      error: "Method not allowed"
+    });
+  }
+
   try {
     const { message, image } = req.body;
 
@@ -8,7 +14,7 @@ export default async function handler(req, res) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
+          Authorization: `Bearer ${process.env.GROQ_API_KEY}`
         },
         body: JSON.stringify({
           model: image
@@ -17,12 +23,17 @@ export default async function handler(req, res) {
 
           messages: [
             {
+              role: "system",
+              content:
+                "You are SwiftCortex AI Ultra. You are an expert image analysis assistant. Never reveal your reasoning or internal thinking. Never output <think> tags. Only provide the final answer. When describing an image, be accurate, detailed, and well-structured."
+            },
+            {
               role: "user",
               content: image
                 ? [
                     {
                       type: "text",
-                      text: message || "Describe this image."
+                      text: message || "Describe this image in detail."
                     },
                     {
                       type: "image_url",
@@ -43,20 +54,25 @@ export default async function handler(req, res) {
     console.log(JSON.stringify(data));
 
     let reply =
-  data.choices?.[0]?.message?.content ||
-  data.error?.message ||
-  "No response from AI";
+      data.choices?.[0]?.message?.content ||
+      data.error?.message ||
+      "No response from AI.";
 
-// Remove <think>...</think>
-reply = reply.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+    // Remove reasoning
+    reply = reply
+      .replace(/<think>[\s\S]*?<\/think>/gi, "")
+      .replace(/<thinking>[\s\S]*?<\/thinking>/gi, "")
+      .trim();
 
-return res.status(200).json({
-  text: reply
-});
+    return res.status(200).json({
+      text: reply
+    });
 
   } catch (error) {
+    console.error(error);
+
     return res.status(500).json({
       error: error.message
     });
   }
-}
+} 
