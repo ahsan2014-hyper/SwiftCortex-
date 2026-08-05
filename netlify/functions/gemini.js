@@ -13,8 +13,8 @@ exports.handler = async (event) => {
         },
         body: JSON.stringify({
   model: image
-    ? "llama-3.2-11b-vision-preview"
-    : "llama-3.1-8b-instant",
+  ? "qwen/qwen3.6-27b"
+  : "llama-3.1-8b-instant",
 
   messages: [
     {
