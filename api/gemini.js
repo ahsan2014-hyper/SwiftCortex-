@@ -18,8 +18,7 @@ export default async function handler(req, res) {
         },
         body: JSON.stringify({
           model: image
-            ? "qwen/qwen3.6-27b"
-            : "llama-3.1-8b-instant",
+            model: "llama-3.3-70b-versatile"
 
           messages: [
             {
