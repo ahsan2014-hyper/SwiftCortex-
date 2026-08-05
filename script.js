@@ -1,44 +1,60 @@
 const uploadBtn = document.getElementById("uploadBtn");
 const imageInput = document.getElementById("imageInput");
-
-uploadBtn.addEventListener("click", () => {
-    imageInput.click();
-});
-
-imageInput.addEventListener("change", () => {
-
-    const file = imageInput.files[0];
-
-    if(file){
-
-        const reader = new FileReader();
-
-        reader.onload = function(){
-
-            window.selectedImage = reader.result;
-
-            addMessage(
-                "📷 Image selected: " + file.name,
-                "user"
-            );
-
-        };
-
-        reader.readAsDataURL(file);
-
-    }
-
-});
-
 const sendBtn = document.getElementById("sendBtn");
 const prompt = document.getElementById("prompt");
 const chatArea = document.getElementById("chatArea");
 const typing = document.getElementById("typing");
 
-sendBtn.addEventListener("click", sendMessage);
-prompt.addEventListener("keydown", function(e){
+window.selectedImage = null;
 
-    if(e.key==="Enter" && !e.shiftKey){
+// Upload Button
+uploadBtn.addEventListener("click", () => {
+    imageInput.click();
+});
+
+// Image Selected
+imageInput.addEventListener("change", () => {
+
+    const file = imageInput.files[0];
+
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function () {
+
+        window.selectedImage = reader.result;
+
+        // Show image preview in chat
+        const div = document.createElement("div");
+        div.className = "user message";
+
+        const img = document.createElement("img");
+        img.src = window.selectedImage;
+        img.alt = "Selected Image";
+        img.style.maxWidth = "260px";
+        img.style.width = "100%";
+        img.style.borderRadius = "12px";
+        img.style.display = "block";
+
+        div.appendChild(img);
+
+        chatArea.appendChild(div);
+
+        chatArea.scrollTop = chatArea.scrollHeight;
+    };
+
+    reader.readAsDataURL(file);
+
+});
+
+// Send Button
+sendBtn.addEventListener("click", sendMessage);
+
+// Enter Key
+prompt.addEventListener("keydown", function (e) {
+
+    if (e.key === "Enter" && !e.shiftKey) {
 
         e.preventDefault();
 
@@ -47,62 +63,76 @@ prompt.addEventListener("keydown", function(e){
     }
 
 });
+
 async function sendMessage() {
 
- const text = prompt.value.trim();
+    const text = prompt.value.trim();
 
-if(text === "" && !window.selectedImage) return;   
+    if (text === "" && !window.selectedImage) return;
 
+    if (text !== "") {
+        addMessage(text, "user");
+    }
 
+    prompt.value = "";
 
-sendBtn.disabled = true;
-sendBtn.innerHTML = "⏳ Thinking...";
+    typing.style.display = "block";
 
-    addMessage(text,"user");
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = "⏳ Thinking...";
 
-    prompt.value="";
-
-    typing.style.display="block";
-
-    try{
+    try {
 
         const response = await fetch("/api/gemini", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-    message: text,
-    image: window.selectedImage || null
-})
-});
 
-        const data=await response.json();
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                message: text,
+                image: window.selectedImage
+            })
+
+        });
+
+        const data = await response.json();
 
         typing.style.display = "none";
-sendBtn.disabled = false;
-sendBtn.innerHTML = "➜ Send";
 
-        const reply = data.text || "No response.";
+        sendBtn.disabled = false;
 
-        addMessage(reply,"bot");
+        sendBtn.innerHTML = "➜ Send";
 
-}catch(e){
+        addMessage(data.text || "No response.", "bot");
 
-    typing.style.display = "none";
-sendBtn.disabled = false;
-sendBtn.innerHTML = "➜ Send";
-    addMessage("Error : " + e.message, "bot");
+        // Clear selected image
+        window.selectedImage = null;
+
+        imageInput.value = "";
+
+    } catch (e) {
+
+        typing.style.display = "none";
+
+        sendBtn.disabled = false;
+
+        sendBtn.innerHTML = "➜ Send";
+
+        addMessage("❌ Error: " + e.message, "bot");
 
     }
 
 }
 
-function addMessage(message,type){
+// Text Messages
+function addMessage(message, type) {
 
-    const div=document.createElement("div");
+    const div = document.createElement("div");
 
-    div.className=type+" message";
+    div.className = type + " message";
 
     div.textContent = message;
 
@@ -111,4 +141,3 @@ function addMessage(message,type){
     chatArea.scrollTop = chatArea.scrollHeight;
 
 }
-
