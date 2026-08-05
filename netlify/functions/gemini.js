@@ -12,14 +12,30 @@ exports.handler = async (event) => {
           "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
         },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
-          messages: [
+  model: image
+    ? "llama-3.2-11b-vision-preview"
+    : "llama-3.1-8b-instant",
+
+  messages: [
+    {
+      role: "user",
+      content: image
+        ? [
             {
-              role: "user",
-              content: message
+              type: "text",
+              text: message || "Describe this image."
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: image
+              }
             }
           ]
-        })
+        : message
+    }
+  ]
+})
       }
     );
 
