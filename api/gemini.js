@@ -1,7 +1,6 @@
-exports.handler = async (event) => {
+export default async function handler(req, res) {
   try {
-
-    const { message, image } = JSON.parse(event.body);
+    const { message, image } = req.body;
 
     const response = await fetch(
       "https://api.groq.com/openai/v1/chat/completions",
@@ -12,30 +11,30 @@ exports.handler = async (event) => {
           "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
         },
         body: JSON.stringify({
-  model: image
-  ? "qwen/qwen3.6-27b"
-  : "llama-3.1-8b-instant",
+          model: image
+            ? "qwen/qwen3.6-27b"
+            : "llama-3.1-8b-instant",
 
-  messages: [
-    {
-      role: "user",
-      content: image
-        ? [
+          messages: [
             {
-              type: "text",
-              text: message || "Describe this image."
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: image
-              }
+              role: "user",
+              content: image
+                ? [
+                    {
+                      type: "text",
+                      text: message || "Describe this image."
+                    },
+                    {
+                      type: "image_url",
+                      image_url: {
+                        url: image
+                      }
+                    }
+                  ]
+                : message
             }
           ]
-        : message
-    }
-  ]
-})
+        })
       }
     );
 
@@ -43,27 +42,16 @@ exports.handler = async (event) => {
 
     console.log(JSON.stringify(data));
 
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        text:
-  data.choices?.[0]?.message?.content ||
-  data.error?.message ||
-  "No response from AI"
-      })
-    };
+    return res.status(200).json({
+      text:
+        data.choices?.[0]?.message?.content ||
+        data.error?.message ||
+        "No response from AI"
+    });
 
   } catch (error) {
-
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        error: error.message
-      })
-    };
-
+    return res.status(500).json({
+      error: error.message
+    });
   }
-};
+}
