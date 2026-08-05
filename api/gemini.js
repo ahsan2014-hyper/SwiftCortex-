@@ -42,12 +42,17 @@ export default async function handler(req, res) {
 
     console.log(JSON.stringify(data));
 
-    return res.status(200).json({
-      text:
-        data.choices?.[0]?.message?.content ||
-        data.error?.message ||
-        "No response from AI"
-    });
+    let reply =
+  data.choices?.[0]?.message?.content ||
+  data.error?.message ||
+  "No response from AI";
+
+// Remove <think>...</think>
+reply = reply.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+
+return res.status(200).json({
+  text: reply
+});
 
   } catch (error) {
     return res.status(500).json({
