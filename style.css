@@ -243,3 +243,17 @@ textarea{
 
 }
   }
+.message img{
+    max-width:100%;
+    border-radius:12px;
+    display:block;
+}
+
+.user.message img{
+    max-width:260px;
+    margin-left:auto;
+}
+
+.bot.message img{
+    max-width:260px;
+                          }
