@@ -277,7 +277,7 @@ textarea{
     padding:10px;
     background:#111827;
     border-radius:14px;
-    display:flex;
+    display:none;
     flex-direction:column;
     gap:6px;
     z-index:999;
