@@ -3,45 +3,60 @@ const plusMenu = document.getElementById("plusMenu");
 
 const imageInput = document.getElementById("imageInput");
 const sendBtn = document.getElementById("sendBtn");
-const prompt = document.getElementById("prompt");
+const promptBox = document.getElementById("prompt");
 const chatArea = document.getElementById("chatArea");
 const typing = document.getElementById("typing");
 
 let selectedImage = null;
 
 
-// Plus Menu Open / Close
-if (plusBtn) {
+// Open / Close Plus Menu
+if (plusBtn && plusMenu) {
+
     plusBtn.addEventListener("click", () => {
 
-        if (plusMenu.style.display === "block") {
-            plusMenu.style.display = "none";
-        } else {
-            plusMenu.style.display = "block";
-        }
+        plusMenu.style.display =
+            plusMenu.style.display === "flex"
+            ? "none"
+            : "flex";
 
     });
+
 }
 
 
-// Camera / Photos Button
+
+// Camera Button
 const cameraBtn = document.getElementById("cameraBtn");
+
+if (cameraBtn && imageInput) {
+
+    cameraBtn.addEventListener("click", () => {
+
+        imageInput.click();
+
+    });
+
+}
+
+
+
+// Photos Button
 const photosBtn = document.getElementById("photosBtn");
 
-if (cameraBtn) {
-    cameraBtn.addEventListener("click", () => {
-        imageInput.click();
-    });
-}
+if (photosBtn && imageInput) {
 
-if (photosBtn) {
     photosBtn.addEventListener("click", () => {
+
         imageInput.click();
+
     });
+
 }
 
 
-// Image Selected
+
+// Image Upload
 if (imageInput) {
 
     imageInput.addEventListener("change", () => {
@@ -58,7 +73,6 @@ if (imageInput) {
 
             selectedImage = reader.result;
 
-
             addImage(selectedImage);
 
         };
@@ -66,60 +80,78 @@ if (imageInput) {
 
         reader.readAsDataURL(file);
 
+
     });
 
 }
 
 
 
+
 // Send Button
-sendBtn.addEventListener("click", sendMessage);
+if (sendBtn) {
+
+    sendBtn.addEventListener("click", sendMessage);
+
+}
+
 
 
 // Enter Send
-prompt.addEventListener("keydown", (e) => {
+if (promptBox) {
 
-    if (e.key === "Enter" && !e.shiftKey) {
+    promptBox.addEventListener("keydown", (e) => {
 
-        e.preventDefault();
+        if (e.key === "Enter" && !e.shiftKey) {
 
-        sendMessage();
+            e.preventDefault();
 
-    }
+            sendMessage();
 
-});
+        }
+
+    });
+
+}
 
 
 
 
-// Main AI Function
+
 async function sendMessage() {
 
 
-    const text = prompt.value.trim();
+    const message = promptBox.value.trim();
 
 
-    if (!text && !selectedImage) return;
+    if (!message && !selectedImage) return;
 
 
 
-    if (text) {
+    if (message) {
 
-        addMessage(text, "user");
+        addMessage(message, "user");
 
     }
 
 
-
-    prompt.value = "";
-
-
-    typing.style.display = "block";
+    promptBox.value = "";
 
 
-    sendBtn.disabled = true;
+    if (typing) {
 
-    sendBtn.innerHTML = "⏳ Thinking...";
+        typing.style.display = "block";
+
+    }
+
+
+    if (sendBtn) {
+
+        sendBtn.disabled = true;
+
+        sendBtn.innerHTML = "⏳ Thinking...";
+
+    }
 
 
 
@@ -128,25 +160,20 @@ async function sendMessage() {
 
         const response = await fetch("/api/gemini", {
 
+            method:"POST",
 
-            method: "POST",
-
-
-            headers: {
-
-                "Content-Type": "application/json"
-
+            headers:{
+                "Content-Type":"application/json"
             },
 
 
-            body: JSON.stringify({
+            body:JSON.stringify({
 
-                message: text,
+                message:message,
 
-                image: selectedImage
+                image:selectedImage
 
             })
-
 
         });
 
@@ -156,31 +183,27 @@ async function sendMessage() {
 
 
 
-        typing.style.display = "none";
-
-
         addMessage(
+
             data.text || "No response from AI.",
+
             "bot"
+
         );
 
 
 
-        selectedImage = null;
+    }
 
-        imageInput.value = "";
-
-
-
-    } catch (error) {
-
-
-        typing.style.display = "none";
+    catch(error){
 
 
         addMessage(
+
             "❌ Error: " + error.message,
+
             "bot"
+
         );
 
 
@@ -188,9 +211,37 @@ async function sendMessage() {
 
 
 
-    sendBtn.disabled = false;
+    finally{
 
-    sendBtn.innerHTML = "➜ Send";
+
+        if (typing) {
+
+            typing.style.display = "none";
+
+        }
+
+
+        if (sendBtn) {
+
+            sendBtn.disabled = false;
+
+            sendBtn.innerHTML = "➜ Send";
+
+        }
+
+
+
+        selectedImage = null;
+
+
+        if (imageInput) {
+
+            imageInput.value = "";
+
+        }
+
+
+    }
 
 
 }
@@ -199,8 +250,7 @@ async function sendMessage() {
 
 
 
-// Add Text Message
-function addMessage(message, type) {
+function addMessage(text,type){
 
 
     const div = document.createElement("div");
@@ -209,7 +259,7 @@ function addMessage(message, type) {
     div.className = type + " message";
 
 
-    div.textContent = message;
+    div.textContent = text;
 
 
     chatArea.appendChild(div);
@@ -223,8 +273,8 @@ function addMessage(message, type) {
 
 
 
-// Add Image Preview
-function addImage(src) {
+
+function addImage(src){
 
 
     const div = document.createElement("div");
@@ -240,13 +290,11 @@ function addImage(src) {
     img.src = src;
 
 
-    img.style.maxWidth = "260px";
-
-    img.style.borderRadius = "12px";
-
+    img.alt = "Uploaded image";
 
 
     div.appendChild(img);
+
 
 
     chatArea.appendChild(div);
@@ -255,4 +303,4 @@ function addImage(src) {
     chatArea.scrollTop = chatArea.scrollHeight;
 
 
-}
+                         }
