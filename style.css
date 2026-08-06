@@ -63,11 +63,12 @@ body{
 
 
 /* Main */
-
 .main{
     flex:1;
     display:flex;
     flex-direction:column;
+    height:100vh;
+    min-width:0;
 }
 
 
