@@ -1,162 +1,234 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SwiftCortex AI Ultra</title>
 
-  <link rel="stylesheet" href="style.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>SwiftCortex AI Ultra</title>
+
+<link rel="stylesheet" href="style.css">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
 </head>
+
 
 <body>
 
-<div class="app">
-
-  <!-- Sidebar -->
-  <aside class="sidebar">
-
-    <div class="logo">
-      ⚡ SwiftCortex AI
-    </div>
-
-    <button id="newChatBtn">
-      ➕ New Chat
-    </button>
-
-    <div class="history">
-
-      <h3>History</h3>
-
-      <ul id="historyList">
-      </ul>
-
-    </div>
-
-    <div class="bottomMenu">
-
-      <button id="themeBtn">
-        🌙 Dark Mode
-      </button>
-
-      <button id="settingsBtn">
-        ⚙ Settings
-      </button>
-
-    </div>
-
-  </aside>
-
-  <!-- Main -->
-  <main class="main">
-
-    <header class="topbar">
-
-      <h1>
-        SwiftCortex AI Ultra
-      </h1>
-
-      <div class="status">
-        ● Online
-      </div>
-
-    </header>
-
-    <section id="chatArea" class="chatArea">
-
-      <div class="bot message">
-        👋 Hello! I'm SwiftCortex AI Ultra.
-        <br><br>
-        Ask me anything.
-      </div>
-
-    </section>
-
-    <div class="typing" id="typing">
-      Thinking...
-    </div>
-
-    <footer class="inputArea">
-
-      <textarea
-      id="prompt"
-      placeholder="Type your message..."
-      ></textarea>
-
-      <div class="buttons">
-
-        <button id="voiceBtn">
-          🎤
-        </button> 
-
-  <button id="plusBtn">➕</button>
-
-  <div id="plusMenu" class="plusMenu">
-
-      <button id="cameraBtn">📷 Camera</button>
-
-      <button id="photosBtn">🖼 Photos</button>
-
-      <button id="filesBtn">📄 Files</button>
-
-      <button id="pluginsBtn">🧩 Plugins</button>
-
-      <button id="thinkBtn">🧠 Think harder</button>
-
-  </div>
-
-  <input
-      type="file"
-      id="imageInput"
-      accept="image/*"
-      capture="environment"
-      style="display:none;"
-  >
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SwiftCortex AI Ultra</title>
-
-  <link rel="stylesheet" href="style.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-</head>
-
-<body>
 
 <div class="app">
 
-  <!-- Sidebar -->
-  <aside class="sidebar">
 
-    <div class="logo">
-      ⚡ SwiftCortex AI
-    </div>
+<!-- Sidebar -->
 
-    <button id="newChatBtn">
-      ➕ New Chat
-    </button>
+<aside class="sidebar">
 
-    <div class="history">
 
-      <h3>History</h3>
+<div class="logo">
+⚡ SwiftCortex AI
+</div>
 
-      <ul id="historyList">
-      </ul>
 
-    </div>
+<button id="newChatBtn">
+➕ New Chat
+</button>
 
-    <div class="bottomMenu">
 
-      <button id="themeBtn">
-        🌙 Dark Mode
-      </button>
+<div class="history">
 
-      <button id="settingsBtn">
-        ⚙ Settings
-      </button>
+<h3>History</h3>
+
+<ul id="historyList"></ul>
+
+</div>
+
+
+<div class="bottomMenu">
+
+
+<button id="themeBtn">
+🌙 Dark Mode
+</button>
+
+
+<button id="settingsBtn">
+⚙ Settings
+</button>
+
+
+</div>
+
+
+</aside>
+
+
+
+
+
+<!-- Main -->
+
+<main class="main">
+
+
+<header class="topbar">
+
+<h1>
+SwiftCortex AI Ultra
+</h1>
+
+
+<div class="status">
+● Online
+</div>
+
+
+</header>
+
+
+
+
+
+<section id="chatArea" class="chatArea">
+
+
+<div class="bot message">
+
+👋 Hello! I'm SwiftCortex AI Ultra.
+
+<br><br>
+
+Ask me anything.
+
+</div>
+
+
+</section>
+
+
+
+
+
+<div id="typing" class="typing">
+
+Thinking...
+
+</div>
+
+
+
+
+
+<footer class="inputArea">
+
+
+
+<textarea
+id="prompt"
+placeholder="Type your message..."
+></textarea>
+
+
+
+
+
+<div class="buttons">
+
+
+
+<button id="voiceBtn">
+🎤
+</button>
+
+
+
+
+
+<button id="plusBtn">
+➕
+</button>
+
+
+
+
+
+<div id="plusMenu" class="plusMenu">
+
+
+<button id="cameraBtn">
+📷 Camera
+</button>
+
+
+<button id="photosBtn">
+🖼 Photos
+</button>
+
+
+<button id="filesBtn">
+📄 Files
+</button>
+
+
+<button id="pluginsBtn">
+🧩 Plugins
+</button>
+
+
+<button id="thinkBtn">
+🧠 Think harder
+</button>
+
+
+</div>
+
+
+
+
+
+<input
+type="file"
+id="imageInput"
+accept="image/*"
+capture="environment"
+style="display:none;"
+>
+
+
+
+
+
+<button id="sendBtn">
+➜ Send
+</button>
+
+
+
+</div>
+
+
+
+</footer>
+
+
+
+</main>
+
+
+
+</div>
+
+
+
+
+
+<script src="script.js"></script>
+
+
+</body>
+
+</html>
