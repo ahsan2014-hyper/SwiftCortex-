@@ -2,7 +2,6 @@ const plusBtn = document.getElementById("plusBtn");
 const plusMenu = document.getElementById("plusMenu");
 
 if (plusBtn && plusMenu) {
-
     plusBtn.addEventListener("click", () => {
 
         if (plusMenu.style.display === "flex") {
