@@ -304,3 +304,40 @@ function addImage(src){
 
 
                          }
+// Extra Plus Menu Buttons
+
+const filesBtn = document.getElementById("filesBtn");
+const pluginsBtn = document.getElementById("pluginsBtn");
+const thinkBtn = document.getElementById("thinkBtn");
+const cameraBtn = document.getElementById("cameraBtn");
+const photosBtn = document.getElementById("photosBtn");
+
+if(cameraBtn){
+    cameraBtn.onclick = () => {
+        imageInput.click();
+    };
+}
+
+if(photosBtn){
+    photosBtn.onclick = () => {
+        imageInput.click();
+    };
+}
+
+if(filesBtn){
+    filesBtn.onclick = () => {
+        alert("Files upload coming soon");
+    };
+}
+
+if(pluginsBtn){
+    pluginsBtn.onclick = () => {
+        alert("Plugins feature coming soon");
+    };
+}
+
+if(thinkBtn){
+    thinkBtn.onclick = () => {
+        alert("Think harder mode activated");
+    };
+}
