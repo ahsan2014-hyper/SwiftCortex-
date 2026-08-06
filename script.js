@@ -2,17 +2,18 @@ const plusBtn = document.getElementById("plusBtn");
 const plusMenu = document.getElementById("plusMenu");
 if (plusBtn && plusMenu) {
 
-    plusBtn.onclick = function(){
+    if (plusBtn && plusMenu) {
 
-        if (plusMenu.style.display === "none" || plusMenu.style.display === "") {
-            plusMenu.style.display = "flex";
-        } else {
-            plusMenu.style.display = "none";
-        }
+    plusBtn.addEventListener("click", () => {
 
-    };
+        plusMenu.style.display =
+            plusMenu.style.display === "flex"
+            ? "none"
+            : "flex";
 
-}
+    });
+
+    }
 
         
 
