@@ -52,7 +52,9 @@ body{
 .sidebar button:hover{
     transform:translateY(-2px);
     box-shadow:0 10px 25px rgba(0,212,255,.35);
-}.history{
+}
+
+.history{
     flex:1;
     overflow-y:auto;
     margin-top:20px;
@@ -113,7 +115,9 @@ body{
 .status{
     color:#22c55e;
     font-weight:700;
-}.chatArea{
+}
+
+.chatArea{
     flex:1;
     overflow-y:auto;
     padding:30px;
@@ -136,8 +140,8 @@ body{
     padding:18px;
     border-radius:18px;
     line-height:1.7;
-    animation:fadeIn .3s ease;
     word-wrap:break-word;
+    animation:fadeIn .3s ease;
 }
 
 .bot{
@@ -167,7 +171,10 @@ body{
     to{
         opacity:1;
         transform:translateY(0);
-    }.inputArea{
+    }
+}
+
+.inputArea{
     padding:20px;
     background:rgba(17,24,39,.85);
     backdrop-filter:blur(18px);
@@ -215,45 +222,53 @@ textarea::placeholder{
     box-shadow:0 10px 25px rgba(0,212,255,.35);
 }
 
-@media(max-width:768px){
+/* Image Preview */
 
-.sidebar{
-    display:none;
-}
-
-.main{
-    width:100%;
-}
-
-.chatArea{
-    padding:18px;
-}
-
-.message{
-    max-width:100%;
-}
-
-.topbar h1{
-    font-size:22px;
-}
-
-textarea{
-    height:80px;
-}
-
-}
-  }
 .message img{
-    max-width:100%;
-    border-radius:12px;
     display:block;
+    max-width:100%;
+    border-radius:14px;
 }
 
 .user.message img{
     max-width:260px;
     margin-left:auto;
+    border:2px solid rgba(255,255,255,.15);
+    box-shadow:0 8px 24px rgba(0,0,0,.25);
 }
 
 .bot.message img{
     max-width:260px;
-                          }
+}
+
+@media(max-width:768px){
+
+    .sidebar{
+        display:none;
+    }
+
+    .main{
+        width:100%;
+    }
+
+    .chatArea{
+        padding:18px;
+    }
+
+    .message{
+        max-width:100%;
+    }
+
+    .topbar h1{
+        font-size:22px;
+    }
+
+    textarea{
+        height:80px;
+    }
+
+    .user.message img{
+        max-width:200px;
+    }
+
+}
