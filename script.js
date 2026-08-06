@@ -1,17 +1,21 @@
 const plusBtn = document.getElementById("plusBtn");
 const plusMenu = document.getElementById("plusMenu");
-
 if (plusBtn && plusMenu) {
-    plusBtn.addEventListener("click", () => {
 
-        if (plusMenu.style.display === "flex") {
-            plusMenu.style.display = "none";
-        } else {
+    plusBtn.onclick = function(){
+
+        if (plusMenu.style.display === "none" || plusMenu.style.display === "") {
             plusMenu.style.display = "flex";
+        } else {
+            plusMenu.style.display = "none";
         }
 
-    });
+    };
+
 }
+
+        
+
 const plusBtn = document.getElementById("plusBtn");
 const plusMenu = document.getElementById("plusMenu");
 
