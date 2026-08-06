@@ -1,58 +1,83 @@
-const uploadBtn = document.getElementById("uploadBtn");
+const plusBtn = document.getElementById("plusBtn");
+const plusMenu = document.getElementById("plusMenu");
+
 const imageInput = document.getElementById("imageInput");
 const sendBtn = document.getElementById("sendBtn");
 const prompt = document.getElementById("prompt");
 const chatArea = document.getElementById("chatArea");
 const typing = document.getElementById("typing");
 
-window.selectedImage = null;
+let selectedImage = null;
 
-// Upload Button
-uploadBtn.addEventListener("click", () => {
-    imageInput.click();
-});
+
+// Plus Menu Open / Close
+if (plusBtn) {
+    plusBtn.addEventListener("click", () => {
+
+        if (plusMenu.style.display === "block") {
+            plusMenu.style.display = "none";
+        } else {
+            plusMenu.style.display = "block";
+        }
+
+    });
+}
+
+
+// Camera / Photos Button
+const cameraBtn = document.getElementById("cameraBtn");
+const photosBtn = document.getElementById("photosBtn");
+
+if (cameraBtn) {
+    cameraBtn.addEventListener("click", () => {
+        imageInput.click();
+    });
+}
+
+if (photosBtn) {
+    photosBtn.addEventListener("click", () => {
+        imageInput.click();
+    });
+}
+
 
 // Image Selected
-imageInput.addEventListener("change", () => {
+if (imageInput) {
 
-    const file = imageInput.files[0];
+    imageInput.addEventListener("change", () => {
 
-    if (!file) return;
+        const file = imageInput.files[0];
 
-    const reader = new FileReader();
+        if (!file) return;
 
-    reader.onload = function () {
 
-        window.selectedImage = reader.result;
+        const reader = new FileReader();
 
-        // Show image preview in chat
-        const div = document.createElement("div");
-        div.className = "user message";
 
-        const img = document.createElement("img");
-        img.src = window.selectedImage;
-        img.alt = "Selected Image";
-        img.style.maxWidth = "260px";
-        img.style.width = "100%";
-        img.style.borderRadius = "12px";
-        img.style.display = "block";
+        reader.onload = () => {
 
-        div.appendChild(img);
+            selectedImage = reader.result;
 
-        chatArea.appendChild(div);
 
-        chatArea.scrollTop = chatArea.scrollHeight;
-    };
+            addImage(selectedImage);
 
-    reader.readAsDataURL(file);
+        };
 
-});
+
+        reader.readAsDataURL(file);
+
+    });
+
+}
+
+
 
 // Send Button
 sendBtn.addEventListener("click", sendMessage);
 
-// Enter Key
-prompt.addEventListener("keydown", function (e) {
+
+// Enter Send
+prompt.addEventListener("keydown", (e) => {
 
     if (e.key === "Enter" && !e.shiftKey) {
 
@@ -64,80 +89,170 @@ prompt.addEventListener("keydown", function (e) {
 
 });
 
+
+
+
+// Main AI Function
 async function sendMessage() {
+
 
     const text = prompt.value.trim();
 
-    if (text === "" && !window.selectedImage) return;
 
-    if (text !== "") {
+    if (!text && !selectedImage) return;
+
+
+
+    if (text) {
+
         addMessage(text, "user");
+
     }
+
+
 
     prompt.value = "";
 
+
     typing.style.display = "block";
 
+
     sendBtn.disabled = true;
+
     sendBtn.innerHTML = "⏳ Thinking...";
+
+
 
     try {
 
+
         const response = await fetch("/api/gemini", {
+
 
             method: "POST",
 
+
             headers: {
+
                 "Content-Type": "application/json"
+
             },
 
+
             body: JSON.stringify({
+
                 message: text,
-                image: window.selectedImage
+
+                image: selectedImage
+
             })
+
 
         });
 
+
+
         const data = await response.json();
+
+
 
         typing.style.display = "none";
 
-        sendBtn.disabled = false;
 
-        sendBtn.innerHTML = "➜ Send";
+        addMessage(
+            data.text || "No response from AI.",
+            "bot"
+        );
 
-        addMessage(data.text || "No response.", "bot");
 
-        // Clear selected image
-        window.selectedImage = null;
+
+        selectedImage = null;
 
         imageInput.value = "";
 
-    } catch (e) {
+
+
+    } catch (error) {
+
 
         typing.style.display = "none";
 
-        sendBtn.disabled = false;
 
-        sendBtn.innerHTML = "➜ Send";
+        addMessage(
+            "❌ Error: " + error.message,
+            "bot"
+        );
 
-        addMessage("❌ Error: " + e.message, "bot");
 
     }
 
+
+
+    sendBtn.disabled = false;
+
+    sendBtn.innerHTML = "➜ Send";
+
+
 }
 
-// Text Messages
+
+
+
+
+// Add Text Message
 function addMessage(message, type) {
+
 
     const div = document.createElement("div");
 
+
     div.className = type + " message";
+
 
     div.textContent = message;
 
+
     chatArea.appendChild(div);
 
+
     chatArea.scrollTop = chatArea.scrollHeight;
+
+
+}
+
+
+
+
+// Add Image Preview
+function addImage(src) {
+
+
+    const div = document.createElement("div");
+
+
+    div.className = "user message";
+
+
+
+    const img = document.createElement("img");
+
+
+    img.src = src;
+
+
+    img.style.maxWidth = "260px";
+
+    img.style.borderRadius = "12px";
+
+
+
+    div.appendChild(img);
+
+
+    chatArea.appendChild(div);
+
+
+    chatArea.scrollTop = chatArea.scrollHeight;
+
 
 }
