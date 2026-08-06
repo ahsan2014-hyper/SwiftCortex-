@@ -269,7 +269,6 @@ textarea{
 
 
 /* Small Plus Menu */
-
 .plusMenu{
     position:absolute;
     bottom:65px;
@@ -278,7 +277,7 @@ textarea{
     padding:10px;
     background:#111827;
     border-radius:14px;
-    display:none;
+    display:flex;
     flex-direction:column;
     gap:6px;
     z-index:999;
