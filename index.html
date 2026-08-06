@@ -91,18 +91,39 @@
           🎤
         </button>
 
-        <button id="uploadBtn">
-          📎
-        </button>
-<input 
-  type="file" 
-  id="imageInput" 
-  accept="image/*" 
-  style="display:none;"
->
-        <button id="sendBtn">
-          ➜ Send
-        </button>
+       <div class="buttons">
+
+  <button id="voiceBtn">🎤</button>
+
+  <button id="plusBtn">➕</button>
+
+  <div id="plusMenu" class="plusMenu">
+
+      <button id="cameraBtn">📷 Camera</button>
+
+      <button id="photosBtn">🖼 Photos</button>
+
+      <button id="filesBtn">📄 Files</button>
+
+      <button id="pluginsBtn">🧩 Plugins</button>
+
+      <button id="thinkBtn">🧠 Think harder</button>
+
+  </div>
+
+  <input
+      type="file"
+      id="imageInput"
+      accept="image/*"
+      capture="environment"
+      style="display:none;"
+  >
+
+  <button id="sendBtn">
+      ➜ Send
+  </button>
+
+       </div> 
 
       </div>
 
