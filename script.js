@@ -1,6 +1,21 @@
 const plusBtn = document.getElementById("plusBtn");
 const plusMenu = document.getElementById("plusMenu");
 
+if (plusBtn && plusMenu) {
+
+    plusBtn.addEventListener("click", () => {
+
+        if (plusMenu.style.display === "flex") {
+            plusMenu.style.display = "none";
+        } else {
+            plusMenu.style.display = "flex";
+        }
+
+    });
+}
+const plusBtn = document.getElementById("plusBtn");
+const plusMenu = document.getElementById("plusMenu");
+
 const imageInput = document.getElementById("imageInput");
 const sendBtn = document.getElementById("sendBtn");
 const promptBox = document.getElementById("prompt");
