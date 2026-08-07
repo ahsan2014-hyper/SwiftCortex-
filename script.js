@@ -13,41 +13,114 @@ const imagePreview = document.getElementById("imagePreview");
 let selectedImage = null;
 
 
-// Plus Menu Toggle
-plusBtn.onclick = () => {
+// Plus Menu
+
+plusBtn.onclick = (e) => {
+    e.stopPropagation();
     plusMenu.classList.toggle("show");
 };
 
 
-// Close menu when clicking outside
-document.addEventListener("click", (e)=>{
-
-    if(!plusBtn.contains(e.target) && !plusMenu.contains(e.target)){
-        plusMenu.classList.remove("show");
-    }
-
+document.addEventListener("click", () => {
+    plusMenu.classList.remove("show");
 });
 
 
-// Photos button
+
+// Gallery
+
 document.getElementById("photoBtn").onclick = () => {
     imageInput.click();
 };
 
 
-// Camera button
-document.getElementById("cameraBtn").onclick = () => {
-    imageInput.click();
+
+// Real Camera
+
+document.getElementById("cameraBtn").onclick = async () => {
+
+    try {
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: true
+        });
+
+
+        const video = document.createElement("video");
+
+        video.srcObject = stream;
+        video.autoplay = true;
+        video.style.width = "250px";
+        video.style.borderRadius = "15px";
+
+
+        imagePreview.innerHTML = "";
+        imagePreview.appendChild(video);
+
+
+
+        const capture = document.createElement("button");
+
+        capture.innerText = "📸 Capture";
+
+
+        capture.onclick = () => {
+
+            const canvas = document.createElement("canvas");
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+
+            canvas
+            .getContext("2d")
+            .drawImage(video,0,0);
+
+
+            selectedImage = canvas.toDataURL("image/jpeg");
+
+
+            stream.getTracks().forEach(track=>{
+                track.stop();
+            });
+
+
+            imagePreview.innerHTML =
+            "📷 Camera image ready";
+
+        };
+
+
+        imagePreview.appendChild(capture);
+
+
+
+    } catch(error){
+
+        alert("Camera permission denied");
+
+        console.log(error);
+
+    }
+
 };
 
 
-// Files button
+
+
+// Files
+
 document.getElementById("fileBtn").onclick = () => {
+
     fileInput.click();
+
 };
+
+
 
 
 // Plugins
+
 document.getElementById("pluginBtn").onclick = () => {
 
     addMessage(
@@ -58,16 +131,21 @@ document.getElementById("pluginBtn").onclick = () => {
 };
 
 
+
+
 // Think Harder
+
 document.getElementById("thinkBtn").onclick = () => {
 
-    userInput.value += " Think deeply and provide a detailed answer.";
+    userInput.value +=
+    " Give a detailed and thoughtful answer.";
 
 };
 
 
 
-// Image Select
+
+// Image Upload
 
 imageInput.onchange = () => {
 
@@ -84,7 +162,8 @@ imageInput.onchange = () => {
         selectedImage = reader.result;
 
 
-        imagePreview.innerHTML = `
+        imagePreview.innerHTML =
+        `
         <div class="image-box">
         🖼 ${file.name}
         </div>
@@ -100,7 +179,7 @@ imageInput.onchange = () => {
 
 
 
-// Send Message
+// Send
 
 sendBtn.onclick = sendMessage;
 
@@ -110,6 +189,7 @@ userInput.addEventListener("keydown",(e)=>{
     if(e.key==="Enter" && !e.shiftKey){
 
         e.preventDefault();
+
         sendMessage();
 
     }
@@ -132,7 +212,7 @@ async function sendMessage(){
     addMessage(text,"user");
 
 
-    userInput.value="";
+    userInput.value = "";
 
 
 
@@ -143,11 +223,11 @@ async function sendMessage(){
 
 
 
-    try{
+    try {
 
 
         const response = await fetch(
-            "/.netlify/functions/gemini",
+            "/api/gemini",
             {
 
             method:"POST",
@@ -165,7 +245,6 @@ async function sendMessage(){
 
             })
 
-
         });
 
 
@@ -173,15 +252,14 @@ async function sendMessage(){
         const data = await response.json();
 
 
-
         loading.remove();
 
 
 
-        if(data.reply){
+        if(data.text){
 
             addMessage(
-                data.reply,
+                data.text,
                 "ai"
             );
 
@@ -190,7 +268,7 @@ async function sendMessage(){
         else{
 
             addMessage(
-                "⚠ No response from AI",
+                "⚠ "+(data.error || "No response"),
                 "ai"
             );
 
@@ -198,9 +276,8 @@ async function sendMessage(){
 
 
 
-    }
+    } catch(error){
 
-    catch(error){
 
         loading.remove();
 
@@ -217,16 +294,16 @@ async function sendMessage(){
 
 
 
-    selectedImage=null;
+    selectedImage = null;
 
-    imagePreview.innerHTML="";
+    imagePreview.innerHTML = "";
 
 }
 
 
 
 
-// Add Message Function
+// Add Message
 
 function addMessage(text,type){
 
@@ -243,14 +320,11 @@ function addMessage(text,type){
     div.innerText=text;
 
 
-
     messages.appendChild(div);
-
 
 
     messages.scrollTop =
     messages.scrollHeight;
-
 
 
     return div;
@@ -262,13 +336,15 @@ function addMessage(text,type){
 
 // New Chat
 
-document.getElementById("newChat").onclick=()=>{
+document.getElementById("newChat").onclick = () => {
 
-    messages.innerHTML=
+
+    messages.innerHTML =
     `
     <div class="ai-message">
     👋 New chat started. How can I help?
     </div>
     `;
+
 
 };
