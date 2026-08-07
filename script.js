@@ -1,183 +1,154 @@
-const plusBtn = document.getElementById("plusBtn");
-const plusMenu = document.getElementById("plusMenu");
-if (plusBtn && plusMenu) {
-
-    if (plusBtn && plusMenu) {
-
-    plusBtn.addEventListener("click", () => {
-
-        plusMenu.style.display =
-            plusMenu.style.display === "flex"
-            ? "none"
-            : "flex";
-
-    });
-
-    }
-
-        
+const messages = document.getElementById("messages");
+const userInput = document.getElementById("userInput");
+const sendBtn = document.getElementById("sendBtn");
 
 const plusBtn = document.getElementById("plusBtn");
 const plusMenu = document.getElementById("plusMenu");
 
 const imageInput = document.getElementById("imageInput");
-const sendBtn = document.getElementById("sendBtn");
-const promptBox = document.getElementById("prompt");
-const chatArea = document.getElementById("chatArea");
-const typing = document.getElementById("typing");
+const fileInput = document.getElementById("fileInput");
+
+const imagePreview = document.getElementById("imagePreview");
 
 let selectedImage = null;
 
 
-// Open / Close Plus Menu
-if (plusBtn && plusMenu) {
+// Plus Menu Toggle
+plusBtn.onclick = () => {
+    plusMenu.classList.toggle("show");
+};
 
-    plusBtn.addEventListener("click", () => {
 
-        plusMenu.style.display =
-            plusMenu.style.display === "flex"
-            ? "none"
-            : "flex";
+// Close menu when clicking outside
+document.addEventListener("click", (e)=>{
 
-    });
+    if(!plusBtn.contains(e.target) && !plusMenu.contains(e.target)){
+        plusMenu.classList.remove("show");
+    }
 
-}
+});
 
 
+// Photos button
+document.getElementById("photoBtn").onclick = () => {
+    imageInput.click();
+};
 
-// Camera Button
-const cameraBtn = document.getElementById("cameraBtn");
 
-if (cameraBtn && imageInput) {
+// Camera button
+document.getElementById("cameraBtn").onclick = () => {
+    imageInput.click();
+};
 
-    cameraBtn.addEventListener("click", () => {
 
-        imageInput.click();
+// Files button
+document.getElementById("fileBtn").onclick = () => {
+    fileInput.click();
+};
 
-    });
 
-}
+// Plugins
+document.getElementById("pluginBtn").onclick = () => {
 
+    addMessage(
+        "🧩 Plugins feature coming soon...",
+        "ai"
+    );
 
+};
 
-// Photos Button
-const photosBtn = document.getElementById("photosBtn");
 
-if (photosBtn && imageInput) {
+// Think Harder
+document.getElementById("thinkBtn").onclick = () => {
 
-    photosBtn.addEventListener("click", () => {
+    userInput.value += " Think deeply and provide a detailed answer.";
 
-        imageInput.click();
+};
 
-    });
 
-}
 
+// Image Select
 
+imageInput.onchange = () => {
 
-// Image Upload
-if (imageInput) {
+    const file = imageInput.files[0];
 
-    imageInput.addEventListener("change", () => {
+    if(!file) return;
 
-        const file = imageInput.files[0];
 
-        if (!file) return;
+    const reader = new FileReader();
 
 
-        const reader = new FileReader();
+    reader.onload = () => {
 
+        selectedImage = reader.result;
 
-        reader.onload = () => {
 
-            selectedImage = reader.result;
+        imagePreview.innerHTML = `
+        <div class="image-box">
+        🖼 ${file.name}
+        </div>
+        `;
 
-            addImage(selectedImage);
+    };
 
-        };
 
+    reader.readAsDataURL(file);
 
-        reader.readAsDataURL(file);
+};
 
 
-    });
 
-}
 
+// Send Message
 
+sendBtn.onclick = sendMessage;
 
 
-// Send Button
-if (sendBtn) {
+userInput.addEventListener("keydown",(e)=>{
 
-    sendBtn.addEventListener("click", sendMessage);
+    if(e.key==="Enter" && !e.shiftKey){
 
-}
-
-
-
-// Enter Send
-if (promptBox) {
-
-    promptBox.addEventListener("keydown", (e) => {
-
-        if (e.key === "Enter" && !e.shiftKey) {
-
-            e.preventDefault();
-
-            sendMessage();
-
-        }
-
-    });
-
-}
-
-
-
-
-
-async function sendMessage() {
-
-
-    const message = promptBox.value.trim();
-
-
-    if (!message && !selectedImage) return;
-
-
-
-    if (message) {
-
-        addMessage(message, "user");
+        e.preventDefault();
+        sendMessage();
 
     }
 
-
-    promptBox.value = "";
-
-
-    if (typing) {
-
-        typing.style.display = "block";
-
-    }
-
-
-    if (sendBtn) {
-
-        sendBtn.disabled = true;
-
-        sendBtn.innerHTML = "⏳ Thinking...";
-
-    }
+});
 
 
 
-    try {
 
 
-        const response = await fetch("/api/gemini", {
+async function sendMessage(){
+
+    const text = userInput.value.trim();
+
+
+    if(!text && !selectedImage) return;
+
+
+
+    addMessage(text,"user");
+
+
+    userInput.value="";
+
+
+
+    const loading = addMessage(
+        "⏳ Thinking...",
+        "ai"
+    );
+
+
+
+    try{
+
+
+        const response = await fetch(
+            "/.netlify/functions/gemini",
+            {
 
             method:"POST",
 
@@ -188,11 +159,12 @@ async function sendMessage() {
 
             body:JSON.stringify({
 
-                message:message,
+                message:text,
 
                 image:selectedImage
 
             })
+
 
         });
 
@@ -202,13 +174,27 @@ async function sendMessage() {
 
 
 
-        addMessage(
+        loading.remove();
 
-            data.text || "No response from AI.",
 
-            "bot"
 
-        );
+        if(data.reply){
+
+            addMessage(
+                data.reply,
+                "ai"
+            );
+
+        }
+
+        else{
+
+            addMessage(
+                "⚠ No response from AI",
+                "ai"
+            );
+
+        }
 
 
 
@@ -216,147 +202,73 @@ async function sendMessage() {
 
     catch(error){
 
+        loading.remove();
+
 
         addMessage(
-
-            "❌ Error: " + error.message,
-
-            "bot"
-
+            "❌ Connection error",
+            "ai"
         );
 
 
-    }
-
-
-
-    finally{
-
-
-        if (typing) {
-
-            typing.style.display = "none";
-
-        }
-
-
-        if (sendBtn) {
-
-            sendBtn.disabled = false;
-
-            sendBtn.innerHTML = "➜ Send";
-
-        }
-
-
-
-        selectedImage = null;
-
-
-        if (imageInput) {
-
-            imageInput.value = "";
-
-        }
-
+        console.error(error);
 
     }
 
+
+
+    selectedImage=null;
+
+    imagePreview.innerHTML="";
 
 }
 
 
 
 
+// Add Message Function
 
 function addMessage(text,type){
 
 
-    const div = document.createElement("div");
+    const div=document.createElement("div");
 
 
-    div.className = type + " message";
+    div.className =
+    type==="user"
+    ? "user-message"
+    : "ai-message";
 
 
-    div.textContent = text;
+    div.innerText=text;
 
 
-    chatArea.appendChild(div);
+
+    messages.appendChild(div);
 
 
-    chatArea.scrollTop = chatArea.scrollHeight;
 
+    messages.scrollTop =
+    messages.scrollHeight;
+
+
+
+    return div;
 
 }
 
 
 
 
+// New Chat
 
-function addImage(src){
+document.getElementById("newChat").onclick=()=>{
 
+    messages.innerHTML=
+    `
+    <div class="ai-message">
+    👋 New chat started. How can I help?
+    </div>
+    `;
 
-    const div = document.createElement("div");
-
-
-    div.className = "user message";
-
-
-
-    const img = document.createElement("img");
-
-
-    img.src = src;
-
-
-    img.alt = "Uploaded image";
-
-
-    div.appendChild(img);
-
-
-
-    chatArea.appendChild(div);
-
-
-    chatArea.scrollTop = chatArea.scrollHeight;
-
-
-                         }
-// Extra Plus Menu Buttons
-
-const filesBtn = document.getElementById("filesBtn");
-const pluginsBtn = document.getElementById("pluginsBtn");
-const thinkBtn = document.getElementById("thinkBtn");
-const cameraBtn = document.getElementById("cameraBtn");
-const photosBtn = document.getElementById("photosBtn");
-
-if(cameraBtn){
-    cameraBtn.onclick = () => {
-        imageInput.click();
-    };
-}
-
-if(photosBtn){
-    photosBtn.onclick = () => {
-        imageInput.click();
-    };
-}
-
-if(filesBtn){
-    filesBtn.onclick = () => {
-        alert("Files upload coming soon");
-    };
-}
-
-if(pluginsBtn){
-    pluginsBtn.onclick = () => {
-        alert("Plugins feature coming soon");
-    };
-}
-
-if(thinkBtn){
-    thinkBtn.onclick = () => {
-        alert("Think harder mode activated");
-    };
-}
+};
