@@ -10,148 +10,599 @@ const fileInput = document.getElementById("fileInput");
 
 const imagePreview = document.getElementById("imagePreview");
 
+
+// ================= CAMERA ELEMENTS =================
+
+const cameraModal = document.getElementById("cameraModal");
+const cameraVideo = document.getElementById("cameraVideo");
+const cameraClose = document.getElementById("cameraClose");
+
+const cameraError = document.getElementById("cameraError");
+const cameraErrorText = document.getElementById("cameraErrorText");
+
+const photoMode = document.getElementById("photoMode");
+const videoMode = document.getElementById("videoMode");
+
+const takePhoto = document.getElementById("takePhoto");
+const startRecord = document.getElementById("startRecord");
+const stopRecord = document.getElementById("stopRecord");
+
+const switchCamera = document.getElementById("switchCamera");
+
+const recordTime = document.getElementById("recordTime");
+const mediaResult = document.getElementById("mediaResult");
+
+
+// ================= VARIABLES =================
+
 let selectedImage = null;
 
+let cameraStream = null;
 
-// Plus Menu
+let mediaRecorder = null;
 
-plusBtn.onclick = (e) => {
-    e.stopPropagation();
+let recordedChunks = [];
+
+let recordedVideo = null;
+
+let currentMode = "photo";
+
+let cameraFacing = "environment";
+
+let recordingTimer = null;
+
+let recordingSeconds = 0;
+
+
+// ================= PLUS MENU =================
+
+plusBtn.onclick = (event) => {
+
+    event.stopPropagation();
+
     plusMenu.classList.toggle("show");
+
 };
 
 
-document.addEventListener("click", () => {
-    plusMenu.classList.remove("show");
+plusMenu.addEventListener("click", (event) => {
+
+    event.stopPropagation();
+
 });
 
 
+document.addEventListener("click", () => {
 
-// Gallery
+    plusMenu.classList.remove("show");
 
-document.getElementById("photoBtn").onclick = () => {
-    imageInput.click();
-};
-
+});
 
 
-// Real Camera
+// ================= OPEN CAMERA =================
 
 document.getElementById("cameraBtn").onclick = async () => {
 
+    plusMenu.classList.remove("show");
+
+    openCamera();
+
+};
+
+
+// ================= CAMERA START =================
+
+async function openCamera() {
+
+    cameraModal.classList.add("show");
+
+    cameraError.classList.remove("show");
+
+    mediaResult.innerHTML = "";
+
     try {
 
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: true
+        await startCamera();
+
+    } catch (error) {
+
+        console.error("Camera error:", error);
+
+        showCameraError(error);
+
+    }
+
+}
+
+
+// ================= START CAMERA =================
+
+async function startCamera() {
+
+    stopCamera();
+
+
+    if (!navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia) {
+
+        throw new Error(
+            "Camera API is not supported by this browser."
+        );
+
+    }
+
+
+    cameraStream =
+        await navigator.mediaDevices.getUserMedia({
+
+            video: {
+                facingMode: cameraFacing,
+                width: {
+                    ideal: 1280
+                },
+                height: {
+                    ideal: 720
+                }
+            },
+
+            audio: true
+
         });
 
 
-        const video = document.createElement("video");
+    cameraVideo.srcObject = cameraStream;
 
-        video.srcObject = stream;
-        video.autoplay = true;
-        video.style.width = "250px";
-        video.style.borderRadius = "15px";
+    await cameraVideo.play();
 
-
-        imagePreview.innerHTML = "";
-        imagePreview.appendChild(video);
+}
 
 
+// ================= CAMERA ERROR =================
 
-        const capture = document.createElement("button");
+function showCameraError(error) {
 
-        capture.innerText = "📸 Capture";
-
-
-        capture.onclick = () => {
-
-            const canvas = document.createElement("canvas");
-
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+    cameraError.classList.add("show");
 
 
-            canvas
-            .getContext("2d")
-            .drawImage(video,0,0);
+    if (
+        error.name === "NotAllowedError" ||
+        error.name === "PermissionDeniedError"
+    ) {
+
+        cameraErrorText.innerHTML =
+            "Camera permission was blocked.<br><br>" +
+            "Allow Camera permission for this website " +
+            "in your browser settings, then try again.";
+
+    }
+
+    else if (error.name === "NotFoundError") {
+
+        cameraErrorText.textContent =
+            "No camera was found on this device.";
+
+    }
+
+    else {
+
+        cameraErrorText.textContent =
+            error.message ||
+            "Unable to access the camera.";
+
+    }
+
+}
 
 
-            selectedImage = canvas.toDataURL("image/jpeg");
+// ================= CLOSE CAMERA =================
+
+cameraClose.onclick = () => {
+
+    closeCamera();
+
+};
 
 
-            stream.getTracks().forEach(track=>{
-                track.stop();
-            });
+cameraModal.addEventListener("click", (event) => {
+
+    if (event.target === cameraModal) {
+
+        closeCamera();
+
+    }
+
+});
 
 
-            imagePreview.innerHTML =
-            "📷 Camera image ready";
+function closeCamera() {
 
-        };
+    stopRecording();
+
+    stopCamera();
+
+    cameraModal.classList.remove("show");
+
+}
 
 
-        imagePreview.appendChild(capture);
+function stopCamera() {
+
+    if (cameraStream) {
+
+        cameraStream
+            .getTracks()
+            .forEach(track => track.stop());
+
+        cameraStream = null;
+
+    }
+
+    cameraVideo.srcObject = null;
+
+}
 
 
+// ================= PHOTO MODE =================
 
-    } catch(error){
+photoMode.onclick = () => {
 
-        alert("Camera permission denied");
+    currentMode = "photo";
 
-        console.log(error);
+
+    photoMode.classList.add("active");
+    videoMode.classList.remove("active");
+
+
+    takePhoto.style.display = "inline-block";
+
+    startRecord.style.display = "none";
+
+    stopRecord.style.display = "none";
+
+};
+
+
+// ================= VIDEO MODE =================
+
+videoMode.onclick = () => {
+
+    currentMode = "video";
+
+
+    videoMode.classList.add("active");
+    photoMode.classList.remove("active");
+
+
+    takePhoto.style.display = "none";
+
+    startRecord.style.display = "inline-block";
+
+    stopRecord.style.display = "none";
+
+};
+
+
+// ================= TAKE PHOTO =================
+
+takePhoto.onclick = () => {
+
+    if (!cameraStream) {
+
+        showCameraError(
+            new Error("Camera is not running.")
+        );
+
+        return;
+
+    }
+
+
+    const canvas = document.createElement("canvas");
+
+
+    canvas.width = cameraVideo.videoWidth;
+
+    canvas.height = cameraVideo.videoHeight;
+
+
+    const context = canvas.getContext("2d");
+
+
+    context.drawImage(
+        cameraVideo,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    selectedImage =
+        canvas.toDataURL("image/jpeg", 0.88);
+
+
+    mediaResult.innerHTML = `
+        <img src="${selectedImage}" alt="Captured photo">
+
+        <div class="media-ready">
+            📸 Photo captured successfully
+        </div>
+    `;
+
+
+    imagePreview.innerHTML = `
+        <div class="image-box">
+            📸 Camera photo ready
+        </div>
+    `;
+
+};
+
+
+// ================= SWITCH CAMERA =================
+
+switchCamera.onclick = async () => {
+
+    cameraFacing =
+        cameraFacing === "environment"
+            ? "user"
+            : "environment";
+
+
+    try {
+
+        await startCamera();
+
+    } catch (error) {
+
+        console.error(error);
+
+        showCameraError(error);
 
     }
 
 };
 
 
+// ================= START RECORDING =================
+
+startRecord.onclick = () => {
+
+    if (!cameraStream) return;
 
 
-// Files
+    if (!window.MediaRecorder) {
 
-document.getElementById("fileBtn").onclick = () => {
+        alert(
+            "Video recording is not supported by this browser."
+        );
 
-    fileInput.click();
+        return;
+
+    }
+
+
+    recordedChunks = [];
+
+
+    let options = {};
+
+
+    if (
+        MediaRecorder.isTypeSupported(
+            "video/webm;codecs=vp9,opus"
+        )
+    ) {
+
+        options.mimeType =
+            "video/webm;codecs=vp9,opus";
+
+    }
+
+    else if (
+        MediaRecorder.isTypeSupported(
+            "video/webm"
+        )
+    ) {
+
+        options.mimeType = "video/webm";
+
+    }
+
+
+    try {
+
+        mediaRecorder =
+            new MediaRecorder(
+                cameraStream,
+                options
+            );
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "This browser cannot start video recording."
+        );
+
+        return;
+
+    }
+
+
+    mediaRecorder.ondataavailable = (event) => {
+
+        if (event.data && event.data.size > 0) {
+
+            recordedChunks.push(event.data);
+
+        }
+
+    };
+
+
+    mediaRecorder.onstop = finishRecording;
+
+
+    mediaRecorder.start();
+
+
+    startRecord.style.display = "none";
+
+    stopRecord.style.display = "inline-block";
+
+
+    startTimer();
 
 };
 
 
+// ================= STOP RECORDING =================
+
+stopRecord.onclick = () => {
+
+    stopRecording();
+
+};
 
 
-// Plugins
+function stopRecording() {
 
-document.getElementById("pluginBtn").onclick = () => {
+    if (
+        mediaRecorder &&
+        mediaRecorder.state !== "inactive"
+    ) {
 
-    addMessage(
-        "🧩 Plugins feature coming soon...",
-        "ai"
+        mediaRecorder.stop();
+
+    }
+
+    stopTimer();
+
+}
+
+
+function finishRecording() {
+
+    const blob = new Blob(
+        recordedChunks,
+        {
+            type:
+                mediaRecorder.mimeType ||
+                "video/webm"
+        }
     );
 
+
+    recordedVideo = blob;
+
+
+    const videoURL =
+        URL.createObjectURL(blob);
+
+
+    mediaResult.innerHTML = `
+        <video
+            src="${videoURL}"
+            controls
+            playsinline
+        ></video>
+
+        <div class="media-ready">
+            🎥 Video recorded successfully
+        </div>
+    `;
+
+
+    imagePreview.innerHTML = `
+        <div class="image-box">
+            🎥 Video ready
+        </div>
+    `;
+
+
+    startRecord.style.display = "inline-block";
+
+    stopRecord.style.display = "none";
+
+}
+
+
+// ================= RECORDING TIMER =================
+
+function startTimer() {
+
+    recordingSeconds = 0;
+
+    recordTime.classList.add("show");
+
+    updateTimer();
+
+
+    recordingTimer =
+        setInterval(() => {
+
+            recordingSeconds++;
+
+            updateTimer();
+
+        }, 1000);
+
+}
+
+
+function stopTimer() {
+
+    if (recordingTimer) {
+
+        clearInterval(recordingTimer);
+
+        recordingTimer = null;
+
+    }
+
+    recordTime.classList.remove("show");
+
+}
+
+
+function updateTimer() {
+
+    const minutes =
+        Math.floor(recordingSeconds / 60)
+        .toString()
+        .padStart(2, "0");
+
+
+    const seconds =
+        (recordingSeconds % 60)
+        .toString()
+        .padStart(2, "0");
+
+
+    recordTime.textContent =
+        `🔴 ${minutes}:${seconds}`;
+
+}
+
+
+// ================= PHOTOS / GALLERY =================
+
+document.getElementById("photoBtn").onclick = () => {
+
+    plusMenu.classList.remove("show");
+
+    imageInput.click();
+
 };
 
-
-
-
-// Think Harder
-
-document.getElementById("thinkBtn").onclick = () => {
-
-    userInput.value +=
-    " Give a detailed and thoughtful answer.";
-
-};
-
-
-
-
-// Image Upload
 
 imageInput.onchange = () => {
 
     const file = imageInput.files[0];
 
-    if(!file) return;
+    if (!file) return;
 
 
     const reader = new FileReader();
@@ -162,11 +613,10 @@ imageInput.onchange = () => {
         selectedImage = reader.result;
 
 
-        imagePreview.innerHTML =
-        `
-        <div class="image-box">
-        🖼 ${file.name}
-        </div>
+        imagePreview.innerHTML = `
+            <div class="image-box">
+                🖼 ${file.name}
+            </div>
         `;
 
     };
@@ -177,86 +627,157 @@ imageInput.onchange = () => {
 };
 
 
+// ================= FILES =================
+
+document.getElementById("fileBtn").onclick = () => {
+
+    plusMenu.classList.remove("show");
+
+    fileInput.click();
+
+};
 
 
-// Send
+fileInput.onchange = () => {
+
+    const file = fileInput.files[0];
+
+    if (!file) return;
+
+
+    imagePreview.innerHTML = `
+        <div class="image-box">
+            📄 ${file.name}
+        </div>
+    `;
+
+};
+
+
+// ================= PLUGINS =================
+
+document.getElementById("pluginBtn").onclick = () => {
+
+    plusMenu.classList.remove("show");
+
+
+    addMessage(
+        "🧩 Plugins are coming soon.",
+        "ai"
+    );
+
+};
+
+
+// ================= THINK HARDER =================
+
+document.getElementById("thinkBtn").onclick = () => {
+
+    plusMenu.classList.remove("show");
+
+
+    userInput.value +=
+        " Give a detailed and thoughtful answer.";
+
+    userInput.focus();
+
+};
+
+
+// ================= SEND BUTTON =================
 
 sendBtn.onclick = sendMessage;
 
 
-userInput.addEventListener("keydown",(e)=>{
+// ================= ENTER TO SEND =================
 
-    if(e.key==="Enter" && !e.shiftKey){
+userInput.addEventListener(
+    "keydown",
+    (event) => {
 
-        e.preventDefault();
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey
+        ) {
 
-        sendMessage();
+            event.preventDefault();
+
+            sendMessage();
+
+        }
+
+    }
+);
+
+
+// ================= SEND MESSAGE =================
+
+async function sendMessage() {
+
+    const text =
+        userInput.value.trim();
+
+
+    if (
+        !text &&
+        !selectedImage
+    ) {
+
+        return;
 
     }
 
-});
 
-
-
-
-
-async function sendMessage(){
-
-    const text = userInput.value.trim();
-
-
-    if(!text && !selectedImage) return;
-
-
-
-    addMessage(text,"user");
+    addMessage(
+        text || "📷 Image",
+        "user"
+    );
 
 
     userInput.value = "";
 
 
-
-    const loading = addMessage(
-        "⏳ Thinking...",
-        "ai"
-    );
-
+    const loading =
+        addMessage(
+            "⏳ Thinking...",
+            "ai"
+        );
 
 
     try {
 
+        const response =
+            await fetch(
+                "/api/gemini",
+                {
 
-        const response = await fetch(
-            "/api/gemini",
-            {
+                    method: "POST",
 
-            method:"POST",
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
 
-            headers:{
-                "Content-Type":"application/json"
-            },
+                    body: JSON.stringify({
 
+                        message: text,
 
-            body:JSON.stringify({
+                        image: selectedImage
 
-                message:text,
+                    })
 
-                image:selectedImage
-
-            })
-
-        });
+                }
+            );
 
 
-
-        const data = await response.json();
+        const data =
+            await response.json();
 
 
         loading.remove();
 
 
-
-        if(data.text){
+        if (response.ok && data.text) {
 
             addMessage(
                 data.text,
@@ -265,66 +786,72 @@ async function sendMessage(){
 
         }
 
-        else{
+        else {
 
             addMessage(
-                "⚠ "+(data.error || "No response"),
+                "⚠️ " +
+                (
+                    data.error ||
+                    "No response from AI."
+                ),
                 "ai"
             );
 
         }
 
+    }
 
+    catch (error) {
 
-    } catch(error){
+        console.error(
+            "API Error:",
+            error
+        );
 
 
         loading.remove();
 
 
         addMessage(
-            "❌ Connection error",
+            "❌ Connection error. " +
+            "Please check your Vercel API.",
             "ai"
         );
-
-
-        console.error(error);
 
     }
 
 
-
     selectedImage = null;
+
+    recordedVideo = null;
 
     imagePreview.innerHTML = "";
 
 }
 
 
+// ================= ADD MESSAGE =================
 
+function addMessage(text, type) {
 
-// Add Message
-
-function addMessage(text,type){
-
-
-    const div=document.createElement("div");
+    const div =
+        document.createElement("div");
 
 
     div.className =
-    type==="user"
-    ? "user-message"
-    : "ai-message";
+        type === "user"
+            ? "user-message"
+            : "ai-message";
 
 
-    div.innerText=text;
+    div.innerText = text;
 
 
     messages.appendChild(div);
 
 
     messages.scrollTop =
-    messages.scrollHeight;
+        messages.scrollHeight;
 
 
     return div;
@@ -332,19 +859,15 @@ function addMessage(text,type){
 }
 
 
-
-
-// New Chat
+// ================= NEW CHAT =================
 
 document.getElementById("newChat").onclick = () => {
 
-
-    messages.innerHTML =
-    `
-    <div class="ai-message">
-    👋 New chat started. How can I help?
-    </div>
+    messages.innerHTML = `
+        <div class="ai-message">
+            👋 New chat started.
+            How can I help you?
+        </div>
     `;
-
 
 };
