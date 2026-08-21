@@ -1,154 +1,449 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
 
-<title>SwiftCortex AI Ultra</title>
+    <title>SwiftCortex AI Ultra</title>
 
-<link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css">
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossorigin>
 
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+          rel="stylesheet">
+
+    <style>
+        /* Camera Modal */
+
+        .camera-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.92);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+        }
+
+        .camera-modal.show {
+            display: flex;
+        }
+
+        .camera-box {
+            width: min(95vw, 650px);
+            background: #0d1424;
+            border: 1px solid #273449;
+            border-radius: 22px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,.6);
+        }
+
+        .camera-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 18px;
+            border-bottom: 1px solid #273449;
+        }
+
+        .camera-header h3 {
+            color: white;
+            font-size: 17px;
+        }
+
+        .camera-close {
+            border: 0;
+            background: #1f2937;
+            color: white;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .camera-screen {
+            position: relative;
+            background: #000;
+            width: 100%;
+            aspect-ratio: 16 / 10;
+            overflow: hidden;
+        }
+
+        #cameraVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        #recordTime {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(180,0,0,.85);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 13px;
+            display: none;
+        }
+
+        #recordTime.show {
+            display: block;
+        }
+
+        .camera-error {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 25px;
+            color: white;
+        }
+
+        .camera-error.show {
+            display: flex;
+        }
+
+        .camera-controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            padding: 15px;
+            flex-wrap: wrap;
+        }
+
+        .camera-mode {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 15px 12px;
+        }
+
+        .mode-btn,
+        .camera-action {
+            border: 0;
+            cursor: pointer;
+            color: white;
+            background: #1f2937;
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-weight: 500;
+        }
+
+        .mode-btn.active {
+            background: #00e5ff;
+            color: #001018;
+        }
+
+        .camera-action.photo {
+            background: #00e5ff;
+            color: #001018;
+        }
+
+        .camera-action.record {
+            background: #ef4444;
+        }
+
+        .camera-action.stop {
+            background: #f59e0b;
+            color: #111827;
+        }
+
+        .camera-action:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
+        #mediaResult {
+            padding: 0 15px 15px;
+        }
+
+        #mediaResult video,
+        #mediaResult img {
+            width: 100%;
+            max-height: 250px;
+            object-fit: contain;
+            border-radius: 12px;
+            background: #000;
+        }
+
+        .media-ready {
+            margin-top: 8px;
+            padding: 9px;
+            border-radius: 10px;
+            background: #111827;
+            color: #9ca3af;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .camera-switch {
+            border: 0;
+            background: #1f2937;
+            color: white;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .file-hidden {
+            display: none;
+        }
+    </style>
 </head>
 
 <body>
 
 <div class="app">
 
-<!-- Sidebar -->
-<aside class="sidebar">
+    <!-- Sidebar -->
 
-<div class="logo">
-⚡ SwiftCortex AI
-</div>
+    <aside class="sidebar">
 
-<button class="new-chat" id="newChat">
-＋ New Chat
-</button>
+        <div class="logo">
+            ⚡ SwiftCortex AI
+        </div>
 
-<div class="history">
-<h3>History</h3>
+        <button class="new-chat" id="newChat">
+            ＋ New Chat
+        </button>
 
-<div id="historyList">
-</div>
+        <div class="history">
+            <h3>History</h3>
+            <div id="historyList"></div>
+        </div>
 
-</div>
+        <div class="side-bottom">
+            <button id="themeBtn">
+                🌙 Dark Mode
+            </button>
+        </div>
 
-<div class="side-bottom">
-
-<button id="themeBtn">
-🌙 Dark Mode
-</button>
-
-</div>
-
-</aside>
+    </aside>
 
 
+    <!-- Main -->
 
-<!-- Main Chat -->
-<main class="chat-area">
+    <main class="chat-area">
 
-
-<header class="topbar">
-<h2>SwiftCortex AI Ultra</h2>
-</header>
-
+        <header class="topbar">
+            <h2>SwiftCortex AI Ultra</h2>
+        </header>
 
 
-<div class="messages" id="messages">
+        <div class="messages" id="messages">
 
-<div class="ai-message">
-👋 Hello! I am SwiftCortex AI. How can I help you?
-</div>
+            <div class="ai-message">
+                👋 Hello! I am SwiftCortex AI.
+                How can I help you?
+            </div>
 
-</div>
-
-
-
-<!-- Image Preview -->
-<div id="imagePreview"></div>
+        </div>
 
 
+        <!-- Selected media -->
 
-<!-- Input Area -->
-<div class="input-area">
-
-
-<!-- Plus Menu -->
-
-<div class="plus-container">
-
-<button id="plusBtn">
-➕
-</button>
+        <div id="imagePreview"></div>
 
 
-<div class="plus-menu" id="plusMenu">
+        <!-- Input -->
 
-<button id="cameraBtn">
-📷 Camera
-</button>
+        <div class="input-area">
 
-<button id="photoBtn">
-🖼 Photos
-</button>
+            <div class="plus-container">
 
-<button id="fileBtn">
-📄 Files
-</button>
-
-<button id="pluginBtn">
-🧩 Plugins
-</button>
-
-<button id="thinkBtn">
-🧠 Think Harder
-</button>
-
-</div>
-
-</div>
+                <button id="plusBtn">
+                    ➕
+                </button>
 
 
+                <div class="plus-menu" id="plusMenu">
 
-<input 
-type="file" 
-id="imageInput" 
-accept="image/*"
-hidden
->
+                    <button id="cameraBtn">
+                        📷 Camera
+                    </button>
+
+                    <button id="photoBtn">
+                        🖼 Photos
+                    </button>
+
+                    <button id="fileBtn">
+                        📄 Files
+                    </button>
+
+                    <button id="pluginBtn">
+                        🧩 Plugins
+                    </button>
+
+                    <button id="thinkBtn">
+                        🧠 Think Harder
+                    </button>
+
+                </div>
+
+            </div>
 
 
-<input 
-type="file" 
-id="fileInput"
-hidden
->
+            <input
+                type="file"
+                id="imageInput"
+                class="file-hidden"
+                accept="image/*"
+            >
 
 
+            <input
+                type="file"
+                id="fileInput"
+                class="file-hidden"
+            >
 
-<textarea 
-id="userInput"
-placeholder="Message SwiftCortex AI..."
-></textarea>
+
+            <textarea
+                id="userInput"
+                placeholder="Message SwiftCortex AI..."
+                rows="1"
+            ></textarea>
 
 
+            <button id="sendBtn">
+                ➤
+            </button>
 
-<button id="sendBtn">
-➤
-</button>
+        </div>
 
+    </main>
 
 </div>
 
 
-</main>
+<!-- ================= CAMERA MODAL ================= -->
 
+<div class="camera-modal" id="cameraModal">
+
+    <div class="camera-box">
+
+        <div class="camera-header">
+
+            <h3>
+                📷 SwiftCortex Camera
+            </h3>
+
+            <button
+                class="camera-close"
+                id="cameraClose"
+            >
+                ✕
+            </button>
+
+        </div>
+
+
+        <div class="camera-mode">
+
+            <button
+                class="mode-btn active"
+                id="photoMode"
+            >
+                📸 Photo
+            </button>
+
+            <button
+                class="mode-btn"
+                id="videoMode"
+            >
+                🎥 Video
+            </button>
+
+        </div>
+
+
+        <div class="camera-screen">
+
+            <video
+                id="cameraVideo"
+                autoplay
+                playsinline
+                muted
+            ></video>
+
+
+            <div id="recordTime">
+                🔴 00:00
+            </div>
+
+
+            <div
+                class="camera-error"
+                id="cameraError"
+            >
+                <div>
+                    <h3>📷 Camera unavailable</h3>
+                    <p id="cameraErrorText">
+                        Camera permission is required.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="camera-controls">
+
+            <button
+                class="camera-switch"
+                id="switchCamera"
+                title="Switch camera"
+            >
+                🔄
+            </button>
+
+
+            <button
+                class="camera-action photo"
+                id="takePhoto"
+            >
+                📸 Take Photo
+            </button>
+
+
+            <button
+                class="camera-action record"
+                id="startRecord"
+                style="display:none;"
+            >
+                ⏺ Record
+            </button>
+
+
+            <button
+                class="camera-action stop"
+                id="stopRecord"
+                style="display:none;"
+            >
+                ⏹ Stop
+            </button>
+
+        </div>
+
+
+        <div id="mediaResult"></div>
+
+    </div>
 
 </div>
-
 
 
 <script src="script.js"></script>
