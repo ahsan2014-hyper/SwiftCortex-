@@ -1,21 +1,6 @@
 "use strict";
 
-/* =========================================================
-   SwiftCortex AI Ultra
-   COMPLETE script.js
-   ========================================================= */
-
-
-/* =========================================================
-   ELEMENT HELPER
-========================================================= */
-
-const $ = (id) => document.getElementById(id);
-
-
-/* =========================================================
-   MAIN ELEMENTS
-========================================================= */
+const $ = id => document.getElementById(id);
 
 const plusBtn = $("plusBtn");
 const plusMenu = $("plusMenu");
@@ -31,18 +16,8 @@ const fileInput = $("fileInput");
 
 const userInput = $("userInput");
 const sendBtn = $("sendBtn");
-
 const messages = $("messages");
 const imagePreview = $("imagePreview");
-
-const newChat = $("newChat");
-const themeBtn = $("themeBtn");
-const historyList = $("historyList");
-
-
-/* =========================================================
-   CAMERA ELEMENTS
-========================================================= */
 
 const cameraModal = $("cameraModal");
 const cameraClose = $("cameraClose");
@@ -62,66 +37,35 @@ const switchCamera = $("switchCamera");
 const recordTime = $("recordTime");
 const mediaResult = $("mediaResult");
 
-
-/* =========================================================
-   STATE
-========================================================= */
-
 let selectedImage = null;
 let selectedVideo = null;
+let selectedFile = null;
 
 let cameraStream = null;
-
-let mediaRecorder = null;
-let recordedChunks = [];
-
 let cameraFacing = "user";
-let currentCameraMode = "photo";
+
+let recorder = null;
+let chunks = [];
 
 let recordingSeconds = 0;
 let recordingTimer = null;
 
-let isSending = false;
-let thinkHarderEnabled = false;
+let thinkHarder = false;
+let sending = false;
 
 
-/* =========================================================
-   BASIC FUNCTIONS
-========================================================= */
+/* =========================
+   MESSAGE
+========================= */
 
-function closePlusMenu() {
-    if (plusMenu) {
-        plusMenu.classList.remove("show");
-    }
-}
-
-
-function scrollMessages() {
-    if (!messages) return;
-
-    requestAnimationFrame(() => {
-        messages.scrollTop = messages.scrollHeight;
-    });
-}
-
-
-/* =========================================================
-   ADD MESSAGE
-========================================================= */
-
-function addMessage(text, sender = "ai", attachment = null) {
-
-    if (!messages) return null;
+function addMessage(text, type = "ai", attachment = null) {
 
     const box = document.createElement("div");
 
     box.className =
-        sender === "user"
+        type === "user"
             ? "user-message"
             : "ai-message";
-
-
-    /* Text */
 
     if (text) {
 
@@ -131,23 +75,14 @@ function addMessage(text, sender = "ai", attachment = null) {
         textBox.textContent = text;
 
         box.appendChild(textBox);
-
     }
 
-
-    /* Image */
-
-    if (
-        attachment &&
-        attachment.type === "image"
-    ) {
+    if (attachment?.type === "image") {
 
         const img =
             document.createElement("img");
 
         img.src = attachment.url;
-
-        img.alt = "Image";
 
         img.style.maxWidth = "280px";
         img.style.maxHeight = "280px";
@@ -156,24 +91,15 @@ function addMessage(text, sender = "ai", attachment = null) {
         img.style.marginTop = "8px";
 
         box.appendChild(img);
-
     }
 
-
-    /* Video */
-
-    if (
-        attachment &&
-        attachment.type === "video"
-    ) {
+    if (attachment?.type === "video") {
 
         const video =
             document.createElement("video");
 
         video.src = attachment.url;
-
         video.controls = true;
-
         video.playsInline = true;
 
         video.style.maxWidth = "300px";
@@ -183,205 +109,196 @@ function addMessage(text, sender = "ai", attachment = null) {
         video.style.marginTop = "8px";
 
         box.appendChild(video);
-
     }
 
+    if (attachment?.type === "file") {
+
+        const fileBox =
+            document.createElement("div");
+
+        fileBox.textContent =
+            "📄 " + attachment.name;
+
+        fileBox.style.marginTop = "8px";
+
+        box.appendChild(fileBox);
+    }
 
     messages.appendChild(box);
 
-    scrollMessages();
+    messages.scrollTop =
+        messages.scrollHeight;
 
     return box;
 }
 
 
-/* =========================================================
+/* =========================
    PLUS MENU
-========================================================= */
+========================= */
 
-if (plusBtn && plusMenu) {
+plusBtn?.addEventListener(
+    "click",
+    event => {
 
-    plusBtn.addEventListener("click", function (event) {
-
-        event.preventDefault();
         event.stopPropagation();
 
         plusMenu.classList.toggle("show");
+    }
+);
 
-    });
 
+document.addEventListener(
+    "click",
+    event => {
+
+        if (
+            plusMenu &&
+            !plusMenu.contains(event.target) &&
+            event.target !== plusBtn
+        ) {
+
+            plusMenu.classList.remove("show");
+        }
+    }
+);
+
+
+function closeMenu() {
+
+    plusMenu?.classList.remove("show");
 }
 
 
-document.addEventListener("click", function (event) {
+/* =========================
+   PHOTO BUTTON
+========================= */
 
-    if (!plusMenu) return;
+photoBtn?.addEventListener(
+    "click",
+    () => {
 
-    if (
-        event.target !== plusBtn &&
-        !plusMenu.contains(event.target)
-    ) {
-
-        closePlusMenu();
-
-    }
-
-});
-
-
-/* =========================================================
-   PHOTOS BUTTON
-========================================================= */
-
-if (photoBtn && imageInput) {
-
-    photoBtn.addEventListener("click", function (event) {
-
-        event.preventDefault();
-
-        closePlusMenu();
+        closeMenu();
 
         imageInput.value = "";
 
         imageInput.click();
-
-    });
-
-}
+    }
+);
 
 
-/* =========================================================
-   IMAGE SELECT
-========================================================= */
+imageInput?.addEventListener(
+    "change",
+    () => {
 
-if (imageInput) {
-
-    imageInput.addEventListener("change", function () {
-
-        const file = this.files && this.files[0];
+        const file =
+            imageInput.files?.[0];
 
         if (!file) return;
-
 
         if (!file.type.startsWith("image/")) {
 
             addMessage(
-                "⚠️ Please select an image.",
-                "ai"
+                "⚠️ Please select an image."
             );
 
-            this.value = "";
-
             return;
-
         }
-
 
         selectedImage = file;
         selectedVideo = null;
+        selectedFile = null;
 
-        showAttachment(file, "image");
+        showPreview(
+            file,
+            "image"
+        );
+    }
+);
 
-    });
 
-}
-
-
-/* =========================================================
+/* =========================
    FILE BUTTON
-========================================================= */
+========================= */
 
-if (fileBtn && fileInput) {
+fileBtn?.addEventListener(
+    "click",
+    () => {
 
-    fileBtn.addEventListener("click", function (event) {
-
-        event.preventDefault();
-
-        closePlusMenu();
+        closeMenu();
 
         fileInput.value = "";
 
         fileInput.click();
-
-    });
-
-}
+    }
+);
 
 
-/* =========================================================
-   FILE SELECT
-========================================================= */
+fileInput?.addEventListener(
+    "change",
+    () => {
 
-if (fileInput) {
-
-    fileInput.addEventListener("change", function () {
-
-        const file = this.files && this.files[0];
+        const file =
+            fileInput.files?.[0];
 
         if (!file) return;
-
-
-        /* Image */
 
         if (file.type.startsWith("image/")) {
 
             selectedImage = file;
             selectedVideo = null;
+            selectedFile = null;
 
-            showAttachment(file, "image");
+            showPreview(
+                file,
+                "image"
+            );
 
             return;
-
         }
-
-
-        /* Video */
 
         if (file.type.startsWith("video/")) {
 
             selectedVideo = file;
             selectedImage = null;
+            selectedFile = null;
 
-            showAttachment(file, "video");
+            showPreview(
+                file,
+                "video"
+            );
 
             return;
-
         }
 
+        selectedFile = file;
+        selectedImage = null;
+        selectedVideo = null;
 
-        /* Other file */
+        showPreview(
+            file,
+            "file"
+        );
+    }
+);
+/* =========================
+   PREVIEW
+========================= */
 
-        showAttachment(file, "file");
-
-    });
-
-}
-
-
-/* =========================================================
-   ATTACHMENT PREVIEW
-========================================================= */
-
-function showAttachment(file, type) {
-
-    if (!imagePreview) return;
+function showPreview(file, type) {
 
     imagePreview.innerHTML = "";
 
-
-    const wrapper =
+    const box =
         document.createElement("div");
 
-    wrapper.style.display = "flex";
-    wrapper.style.alignItems = "center";
-    wrapper.style.gap = "10px";
-    wrapper.style.padding = "10px";
-    wrapper.style.margin = "5px 0";
-    wrapper.style.borderRadius = "12px";
-    wrapper.style.background = "#111827";
+    box.style.display = "flex";
+    box.style.alignItems = "center";
+    box.style.gap = "10px";
+    box.style.padding = "8px";
+    box.style.background = "#111827";
+    box.style.borderRadius = "12px";
 
-
-    /* Image preview */
 
     if (type === "image") {
 
@@ -391,19 +308,16 @@ function showAttachment(file, type) {
         img.src =
             URL.createObjectURL(file);
 
-        img.style.width = "65px";
-        img.style.height = "65px";
+        img.style.width = "60px";
+        img.style.height = "60px";
         img.style.objectFit = "cover";
         img.style.borderRadius = "10px";
 
-        wrapper.appendChild(img);
-
+        box.appendChild(img);
     }
 
 
-    /* Video preview */
-
-    else if (type === "video") {
+    if (type === "video") {
 
         const video =
             document.createElement("video");
@@ -411,85 +325,64 @@ function showAttachment(file, type) {
         video.src =
             URL.createObjectURL(file);
 
-        video.controls = true;
         video.muted = true;
+        video.controls = true;
 
-        video.style.width = "100px";
-        video.style.height = "65px";
+        video.style.width = "90px";
+        video.style.height = "60px";
         video.style.objectFit = "cover";
         video.style.borderRadius = "10px";
 
-        wrapper.appendChild(video);
-
+        box.appendChild(video);
     }
 
 
-    const info =
-        document.createElement("div");
+    const name =
+        document.createElement("span");
 
-    info.style.flex = "1";
-    info.style.color = "white";
+    name.textContent =
+        type === "image"
+            ? "🖼 " + file.name
+            : type === "video"
+                ? "🎥 " + file.name
+                : "📄 " + file.name;
 
-    if (type === "image") {
+    name.style.color = "white";
+    name.style.flex = "1";
 
-        info.textContent =
-            "🖼 " + file.name;
-
-    }
-
-    else if (type === "video") {
-
-        info.textContent =
-            "🎥 " + file.name;
-
-    }
-
-    else {
-
-        info.textContent =
-            "📄 " + file.name;
-
-    }
-
-    wrapper.appendChild(info);
+    box.appendChild(name);
 
 
     const remove =
         document.createElement("button");
 
-    remove.type = "button";
-
     remove.textContent = "✕";
+    remove.type = "button";
 
     remove.style.border = "0";
     remove.style.background = "#374151";
     remove.style.color = "white";
     remove.style.borderRadius = "8px";
-    remove.style.padding = "7px 10px";
-    remove.style.cursor = "pointer";
+    remove.style.padding = "6px 9px";
 
-    remove.addEventListener("click", function () {
+    remove.onclick =
+        clearAttachment;
 
-        clearAttachment();
+    box.appendChild(remove);
 
-    });
-
-
-    wrapper.appendChild(remove);
-
-    imagePreview.appendChild(wrapper);
-
+    imagePreview.appendChild(box);
 }
 
 
-/* =========================================================
-   CLEAR ATTACHMENT
-========================================================= */
+/* =========================
+   CLEAR FILE
+========================= */
 
 function clearAttachment() {
 
     selectedImage = null;
     selectedVideo = null;
+    selectedFile = null;
 
     if (imageInput) {
         imageInput.value = "";
@@ -502,202 +395,150 @@ function clearAttachment() {
     if (imagePreview) {
         imagePreview.innerHTML = "";
     }
-
 }
 
 
-/* =========================================================
+/* =========================
    CAMERA BUTTON
-========================================================= */
+========================= */
 
-if (cameraBtn) {
+cameraBtn?.addEventListener(
+    "click",
+    async () => {
 
-    cameraBtn.addEventListener("click", async function (event) {
+        closeMenu();
 
-        event.preventDefault();
-
-        closePlusMenu();
-
-        await openCamera();
-
-    });
-
-}
-
-
-/* =========================================================
-   OPEN CAMERA
-========================================================= */
-
-async function openCamera() {
-
-    if (!cameraModal) return;
-
-    cameraModal.classList.add("show");
-
-
-    if (cameraError) {
-
-        cameraError.classList.remove("show");
-
-    }
-
-
-    try {
+        cameraModal.classList.add("show");
 
         await startCamera();
-
     }
-
-    catch (error) {
-
-        console.error(
-            "Camera error:",
-            error
-        );
-
-        showCameraError(error);
-
-    }
-
-}
+);
 
 
-/* =========================================================
+/* =========================
    START CAMERA
-========================================================= */
+========================= */
 
 async function startCamera() {
 
     stopCamera();
-
 
     if (
         !navigator.mediaDevices ||
         !navigator.mediaDevices.getUserMedia
     ) {
 
-        throw new Error(
+        showCameraError(
             "Camera is not supported by this browser."
         );
 
+        return;
     }
 
 
-    cameraStream =
-        await navigator.mediaDevices.getUserMedia({
+    try {
 
-            video: {
+        cameraStream =
+            await navigator.mediaDevices.getUserMedia({
 
-                facingMode: cameraFacing,
-
-                width: {
-                    ideal: 1280
+                video: {
+                    facingMode: {
+                        ideal: cameraFacing
+                    },
+                    width: {
+                        ideal: 1280
+                    },
+                    height: {
+                        ideal: 720
+                    }
                 },
 
-                height: {
-                    ideal: 720
-                }
+                audio: true
+            });
 
-            },
-
-            audio: true
-
-        });
-
-
-    if (cameraVideo) {
 
         cameraVideo.srcObject =
             cameraStream;
 
-        try {
+        await cameraVideo.play();
 
-            await cameraVideo.play();
+        cameraError?.classList.remove(
+            "show"
+        );
 
-        }
+    } catch (error) {
 
-        catch (error) {
+        console.error(
+            "Camera:",
+            error
+        );
 
-            console.log(
-                "Camera video play:",
-                error
-            );
-
-        }
-
+        showCameraError(
+            getCameraError(error)
+        );
     }
-
 }
 
 
-/* =========================================================
+/* =========================
    CAMERA ERROR
-========================================================= */
+========================= */
 
-function showCameraError(error) {
+function showCameraError(message) {
 
-    if (!cameraError) return;
-
-    cameraError.classList.add("show");
-
-
-    let message =
-        "Camera permission is required.";
-
-
-    if (error?.name === "NotAllowedError") {
-
-        message =
-            "Camera permission was denied. Please allow camera access.";
-
-    }
-
-    else if (error?.name === "NotFoundError") {
-
-        message =
-            "No camera was found on this device.";
-
-    }
-
-    else if (error?.name === "NotReadableError") {
-
-        message =
-            "Camera is being used by another application.";
-
-    }
-
-    else if (error?.message) {
-
-        message =
-            error.message;
-
-    }
-
+    cameraError?.classList.add(
+        "show"
+    );
 
     if (cameraErrorText) {
 
         cameraErrorText.textContent =
             message;
+    }
+}
 
+
+function getCameraError(error) {
+
+    if (
+        error?.name ===
+        "NotAllowedError"
+    ) {
+
+        return "Camera permission was denied. Please allow camera access.";
     }
 
+    if (
+        error?.name ===
+        "NotFoundError"
+    ) {
+
+        return "No camera was found on this device.";
+    }
+
+    if (
+        error?.name ===
+        "NotReadableError"
+    ) {
+
+        return "Camera is already being used by another app.";
+    }
+
+    return (
+        error?.message ||
+        "Unable to access the camera."
+    );
 }
 
 
-/* =========================================================
+/* =========================
    CLOSE CAMERA
-========================================================= */
+========================= */
 
-if (cameraClose) {
-
-    cameraClose.addEventListener("click", function () {
-
-        closeCamera();
-
-    });
-
-}
+cameraClose?.addEventListener(
+    "click",
+    closeCamera
+);
 
 
 function closeCamera() {
@@ -705,19 +546,15 @@ function closeCamera() {
     stopRecording();
     stopCamera();
 
-
-    if (cameraModal) {
-
-        cameraModal.classList.remove("show");
-
-    }
-
+    cameraModal?.classList.remove(
+        "show"
+    );
 }
 
 
-/* =========================================================
+/* =========================
    STOP CAMERA
-========================================================= */
+========================= */
 
 function stopCamera() {
 
@@ -725,185 +562,139 @@ function stopCamera() {
 
         cameraStream
             .getTracks()
-            .forEach(function (track) {
-
-                track.stop();
-
-            });
+            .forEach(
+                track => track.stop()
+            );
 
         cameraStream = null;
-
     }
-
 
     if (cameraVideo) {
 
         cameraVideo.srcObject = null;
-
     }
-
 }
 
 
-/* =========================================================
+/* =========================
+   SWITCH CAMERA
+========================= */
+
+switchCamera?.addEventListener(
+    "click",
+    async () => {
+
+        cameraFacing =
+            cameraFacing === "user"
+                ? "environment"
+                : "user";
+
+        await startCamera();
+    }
+);
+
+
+/* =========================
    PHOTO MODE
-========================================================= */
+========================= */
 
-if (photoMode) {
+photoMode?.addEventListener(
+    "click",
+    async () => {
 
-    photoMode.addEventListener(
-        "click",
-        async function () {
+        photoMode.classList.add(
+            "active"
+        );
 
-            currentCameraMode = "photo";
+        videoMode.classList.remove(
+            "active"
+        );
 
-            photoMode.classList.add("active");
+        takePhoto.style.display =
+            "inline-flex";
 
-            if (videoMode) {
-                videoMode.classList.remove("active");
-            }
+        startRecord.style.display =
+            "none";
 
-            if (takePhoto) {
-                takePhoto.style.display =
-                    "inline-flex";
-            }
+        stopRecord.style.display =
+            "none";
 
-            if (startRecord) {
-                startRecord.style.display =
-                    "none";
-            }
-
-            if (stopRecord) {
-                stopRecord.style.display =
-                    "none";
-            }
-
-            if (recordTime) {
-                recordTime.classList.remove("show");
-            }
-
-            try {
-
-                await startCamera();
-
-            }
-
-            catch (error) {
-
-                showCameraError(error);
-
-            }
-
-        }
-    );
-
-}
+        await startCamera();
+    }
+);
 
 
-/* =========================================================
+/* =========================
    VIDEO MODE
-========================================================= */
+========================= */
 
-if (videoMode) {
+videoMode?.addEventListener(
+    "click",
+    async () => {
 
-    videoMode.addEventListener(
-        "click",
-        async function () {
+        videoMode.classList.add(
+            "active"
+        );
 
-            currentCameraMode = "video";
+        photoMode.classList.remove(
+            "active"
+        );
 
-            videoMode.classList.add("active");
+        takePhoto.style.display =
+            "none";
 
-            if (photoMode) {
-                photoMode.classList.remove("active");
-            }
+        startRecord.style.display =
+            "inline-flex";
 
-            if (takePhoto) {
-                takePhoto.style.display =
-                    "none";
-            }
+        stopRecord.style.display =
+            "none";
 
-            if (startRecord) {
-                startRecord.style.display =
-                    "inline-flex";
-            }
-
-            if (stopRecord) {
-                stopRecord.style.display =
-                    "none";
-            }
-
-            try {
-
-                await startCamera();
-
-            }
-
-            catch (error) {
-
-                showCameraError(error);
-
-            }
-
-        }
-    );
-
-}
+        await startCamera();
+    }
+);
 
 
-/* =========================================================
+/* =========================
    TAKE PHOTO
-========================================================= */
+========================= */
 
-if (takePhoto) {
+takePhoto?.addEventListener(
+    "click",
+    capturePhoto
+);
 
-    takePhoto.addEventListener(
-        "click",
-        function () {
-
-            capturePhoto();
-
-        }
-    );
-
-}
-
-
-/* =========================================================
-   CAPTURE PHOTO
-========================================================= */
 
 function capturePhoto() {
 
-    if (!cameraVideo || !cameraStream) {
+    if (!cameraStream) {
 
         addMessage(
-            "⚠️ Camera is not ready.",
-            "ai"
+            "⚠️ Camera is not ready."
         );
 
         return;
-
     }
 
 
     const canvas =
-        document.createElement("canvas");
+        document.createElement(
+            "canvas"
+        );
 
 
-    const width =
-        cameraVideo.videoWidth || 1280;
+    canvas.width =
+        cameraVideo.videoWidth ||
+        1280;
 
-    const height =
-        cameraVideo.videoHeight || 720;
-
-
-    canvas.width = width;
-    canvas.height = height;
+    canvas.height =
+        cameraVideo.videoHeight ||
+        720;
 
 
     const ctx =
-        canvas.getContext("2d");
+        canvas.getContext(
+            "2d"
+        );
 
 
     if (!ctx) return;
@@ -913,43 +704,34 @@ function capturePhoto() {
         cameraVideo,
         0,
         0,
-        width,
-        height
+        canvas.width,
+        canvas.height
     );
 
 
     canvas.toBlob(
-        function (blob) {
+        blob => {
 
-            if (!blob) {
-
-                addMessage(
-                    "⚠️ Could not capture photo.",
-                    "ai"
-                );
-
-                return;
-
-            }
+            if (!blob) return;
 
 
             const file =
                 new File(
                     [blob],
-                    "swiftcortex-photo-" +
-                    Date.now() +
-                    ".jpg",
+                    `swiftcortex-photo-${Date.now()}.jpg`,
                     {
-                        type: "image/jpeg"
+                        type:
+                            "image/jpeg"
                     }
                 );
 
 
             selectedImage = file;
             selectedVideo = null;
+            selectedFile = null;
 
 
-            showAttachment(
+            showPreview(
                 file,
                 "image"
             );
@@ -961,212 +743,695 @@ function capturePhoto() {
         "image/jpeg",
         0.92
     );
-
-}
-
-
-/* =========================================================
-   SWITCH CAMERA
-========================================================= */
-
-if (switchCamera) {
-
-    switchCamera.addEventListener(
-        "click",
-        async function () {
-
-            cameraFacing =
-                cameraFacing === "user"
-                    ? "environment"
-                    : "user";
-
-
-            try {
-
-                await startCamera();
-
-            }
-
-            catch (error) {
-
-                showCameraError(error);
-
-            }
-
-        }
-    );
-
-}
-
-
-/* =========================================================
+       }
+/* =========================
    VIDEO RECORDING
-========================================================= */
+========================= */
 
-if (startRecord) {
-
-    startRecord.addEventListener(
-        "click",
-        function () {
-
-            startVideoRecording();
-
-        }
-    );
-
-}
-
-
-function getVideoMimeType() {
+function getMimeType() {
 
     if (!window.MediaRecorder) {
         return "";
     }
 
-
     const types = [
-
         "video/webm;codecs=vp9,opus",
         "video/webm;codecs=vp8,opus",
         "video/webm"
-
     ];
-
 
     for (const type of types) {
 
         if (
-            MediaRecorder.isTypeSupported(type)
+            MediaRecorder.isTypeSupported(
+                type
+            )
         ) {
-
             return type;
-
         }
-
     }
 
-
     return "";
-
 }
 
 
-/* =========================================================
-   START VIDEO RECORDING
-========================================================= */
+/* =========================
+   START RECORD
+========================= */
 
-function startVideoRecording() {
+startRecord?.addEventListener(
+    "click",
+    startRecording
+);
+
+
+function startRecording() {
 
     if (!cameraStream) {
 
         addMessage(
-            "⚠️ Camera is not ready.",
-            "ai"
+            "⚠️ Camera is not ready."
         );
 
         return;
-
     }
 
 
     if (!window.MediaRecorder) {
 
         addMessage(
-            "❌ Video recording is not supported by this browser.",
-            "ai"
+            "❌ Video recording is not supported."
         );
 
         return;
-
     }
 
 
-    recordedChunks = [];
+    chunks = [];
 
 
     const mimeType =
-        getVideoMimeType();
+        getMimeType();
 
 
     try {
 
-        mediaRecorder =
+        recorder =
             mimeType
                 ? new MediaRecorder(
                     cameraStream,
                     {
-                        mimeType:
-                            mimeType
+                        mimeType
                     }
                 )
                 : new MediaRecorder(
                     cameraStream
                 );
 
-    }
-
-    catch (error) {
+    } catch (error) {
 
         console.error(error);
 
         addMessage(
-            "❌ Could not start recording.",
-            "ai"
+            "❌ Could not start recording."
         );
 
         return;
-
     }
 
 
-    mediaRecorder.ondataavailable =
-        function (event) {
+    recorder.ondataavailable =
+        event => {
 
             if (
                 event.data &&
                 event.data.size > 0
             ) {
 
-                recordedChunks.push(
+                chunks.push(
                     event.data
                 );
-
             }
-
         };
 
 
-    mediaRecorder.onstop =
-        function () {
-
-            finishVideo();
-
-        };
+    recorder.onstop =
+        finishRecording;
 
 
-    mediaRecorder.start(250);
+    recorder.start();
 
 
     recordingSeconds = 0;
 
-    updateRecordingTime();
+    updateRecordTime();
 
 
-    if (recordTime) {
+    recordingTimer =
+        setInterval(
+            () => {
 
-        recordTime.classList.add("show");
+                recordingSeconds++;
 
+                updateRecordTime();
+
+            },
+            1000
+        );
+
+
+    recordTime?.classList.add(
+        "show"
+    );
+
+
+    startRecord.style.display =
+        "none";
+
+
+    stopRecord.style.display =
+        "inline-flex";
+
+
+    switchCamera.disabled =
+        true;
+}
+
+
+/* =========================
+   RECORD TIME
+========================= */
+
+function updateRecordTime() {
+
+    if (!recordTime) return;
+
+
+    const minutes =
+        Math.floor(
+            recordingSeconds / 60
+        )
+        .toString()
+        .padStart(2, "0");
+
+
+    const seconds =
+        (recordingSeconds % 60)
+        .toString()
+        .padStart(2, "0");
+
+
+    recordTime.textContent =
+        `🔴 ${minutes}:${seconds}`;
+}
+
+
+/* =========================
+   STOP RECORD
+========================= */
+
+stopRecord?.addEventListener(
+    "click",
+    stopRecording
+);
+
+
+function stopRecording() {
+
+    if (recordingTimer) {
+
+        clearInterval(
+            recordingTimer
+        );
+
+        recordingTimer = null;
     }
 
 
-    if (startRecord) {
+    if (
+        recorder &&
+        recorder.state !==
+            "inactive"
+    ) {
+
+        recorder.stop();
+    }
+
+
+    recordTime?.classList.remove(
+        "show"
+    );
+
+
+    stopRecord.style.display =
+        "none";
+
+
+    if (
+        videoMode?.classList.contains(
+            "active"
+        )
+    ) {
 
         startRecord.style.display =
-            "none";
+            "inline-flex";
+    }
+
+
+    if (switchCamera) {
+
+        switchCamera.disabled =
+            false;
+    }
+}
+
+
+/* =========================
+   FINISH VIDEO
+========================= */
+
+function finishRecording() {
+
+    if (!chunks.length) {
+        return;
+    }
+
+
+    const mimeType =
+        recorder?.mimeType ||
+        "video/webm";
+
+
+    const blob =
+        new Blob(
+            chunks,
+            {
+                type:
+                    mimeType
+            }
+        );
+
+
+    const file =
+        new File(
+            [blob],
+            `swiftcortex-video-${Date.now()}.webm`,
+            {
+                type:
+                    mimeType
+            }
+        );
+
+
+    selectedVideo = file;
+    selectedImage = null;
+    selectedFile = null;
+
+
+    showPreview(
+        file,
+        "video"
+    );
+
+
+    if (mediaResult) {
+
+        mediaResult.innerHTML = "";
+
+
+        const video =
+            document.createElement(
+                "video"
+            );
+
+
+        video.src =
+            URL.createObjectURL(
+                file
+            );
+
+
+        video.controls = true;
+        video.playsInline = true;
+
+
+        mediaResult.appendChild(
+            video
+        );
+    }
+
+
+    chunks = [];
+}
+
+
+/* =========================
+   THINK HARDER
+========================= */
+
+thinkBtn?.addEventListener(
+    "click",
+    () => {
+
+        thinkHarder =
+            !thinkHarder;
+
+
+        if (thinkHarder) {
+
+            thinkBtn.textContent =
+                "🧠 Think Harder ✓";
+
+            thinkBtn.style.background =
+                "#00e5ff";
+
+            thinkBtn.style.color =
+                "#001018";
+
+        } else {
+
+            thinkBtn.textContent =
+                "🧠 Think Harder";
+
+            thinkBtn.style.background =
+                "";
+
+            thinkBtn.style.color =
+                "";
+        }
+
+
+        closeMenu();
+    }
+);
+
+
+/* =========================
+   PLUGINS
+========================= */
+
+pluginBtn?.addEventListener(
+    "click",
+    () => {
+
+        closeMenu();
+
+        addMessage(
+            "🧩 Plugins are ready to be connected."
+        );
+    }
+);
+
+
+/* =========================
+   TEXT INPUT
+========================= */
+
+function resizeInput() {
+
+    if (!userInput) return;
+
+    userInput.style.height =
+        "auto";
+
+    userInput.style.height =
+        Math.min(
+            userInput.scrollHeight,
+            150
+        ) + "px";
+}
+
+
+userInput?.addEventListener(
+    "input",
+    resizeInput
+);
+
+
+/* =========================
+   ENTER TO SEND
+========================= */
+
+userInput?.addEventListener(
+    "keydown",
+    event => {
+
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey
+        ) {
+
+            event.preventDefault();
+
+            sendMessage();
+        }
+    }
+);
+/* =========================
+   SEND BUTTON
+========================= */
+
+sendBtn?.addEventListener(
+    "click",
+    sendMessage
+);
+
+
+/* =========================
+   SEND MESSAGE
+========================= */
+
+async function sendMessage() {
+
+    if (sending) return;
+
+
+    const text =
+        userInput?.value.trim() || "";
+
+
+    if (
+        !text &&
+        !selectedImage &&
+        !selectedVideo &&
+        !selectedFile
+    ) {
+        return;
+    }
+
+
+    sending = true;
+
+    sendBtn.disabled = true;
+
+
+    let attachment = null;
+
+
+    if (selectedImage) {
+
+        attachment = {
+            type: "image",
+            url: URL.createObjectURL(
+                selectedImage
+            )
+        };
+
+    } else if (selectedVideo) {
+
+        attachment = {
+            type: "video",
+            url: URL.createObjectURL(
+                selectedVideo
+            )
+        };
+
+    } else if (selectedFile) {
+
+        attachment = {
+            type: "file",
+            name: selectedFile.name
+        };
+    }
+
+
+    addMessage(
+        text ||
+        "Please analyze this attachment.",
+        "user",
+        attachment
+    );
+
+
+    const message =
+        text ||
+        "Please analyze this attachment.";
+
+
+    userInput.value = "";
+
+    resizeInput();
+
+    clearAttachment();
+
+
+    const thinking =
+        addMessage(
+            "Thinking...",
+            "ai"
+        );
+
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/chat",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+
+                        message:
+
+                            message,
+
+                        thinkHarder:
+
+                            thinkHarder
+                    })
+                }
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                `Server error: ${response.status}`
+            );
+        }
+
+
+        const data =
+            await response.json();
+
+
+        thinking?.remove();
+
+
+        const reply =
+            data.reply ||
+            data.message ||
+            data.text ||
+            data.output;
+
+
+        if (reply) {
+
+            addMessage(
+                reply,
+                "ai"
+            );
+
+        } else {
+
+            addMessage(
+                "⚠️ AI returned an empty response.",
+                "ai"
+            );
+        }
+
+
+    } catch (error) {
+
+        console.error(
+            "SwiftCortex:",
+            error
+        );
+
+
+        thinking?.remove();
+
+
+        addMessage(
+            "❌ Connection error: " +
+            error.message,
+            "ai"
+        );
 
     }
 
 
-    if (stopRecord) {
+    sending = false;
 
-        stopRecord.style.d
+    sendBtn.disabled = false;
+
+    userInput?.focus();
+}
+
+
+/* =========================
+   NEW CHAT
+========================= */
+
+$("newChat")?.addEventListener(
+    "click",
+    () => {
+
+        messages.innerHTML = "";
+
+        addMessage(
+            "👋 Hello! I am SwiftCortex AI. How can I help you?"
+        );
+
+        clearAttachment();
+
+        userInput.value = "";
+
+        resizeInput();
+    }
+);
+
+
+/* =========================
+   THEME
+========================= */
+
+$("themeBtn")?.addEventListener(
+    "click",
+    () => {
+
+        document.body.classList.toggle(
+            "light-mode"
+        );
+
+
+        const light =
+            document.body.classList.contains(
+                "light-mode"
+            );
+
+
+        $("themeBtn").textContent =
+            light
+                ? "☀️ Light Mode"
+                : "🌙 Dark Mode";
+    }
+);
+
+
+/* =========================
+   ESC CLOSE CAMERA
+========================= */
+
+document.addEventListener(
+    "keydown",
+    event => {
+
+        if (
+            event.key === "Escape" &&
+            cameraModal?.classList.contains(
+                "show"
+            )
+        ) {
+
+            closeCamera();
+        }
+    }
+);
+
+
+/* =========================
+   START
+========================= */
+
+resizeInput();
+
+console.log(
+    "⚡ SwiftCortex AI Ultra ready"
+);
