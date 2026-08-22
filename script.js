@@ -1265,8 +1265,8 @@ async function sendMessage() {
     try {
 
         const response =
-            await fetch(
-                "/api/chat",
+    await fetch(
+        "/api/GEMINI",
                 {
                     method: "POST",
 
