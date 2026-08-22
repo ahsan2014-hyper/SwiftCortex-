@@ -1331,11 +1331,373 @@ async function sendMessage() {
 
         console.error(
             "SwiftCortex:",
-            error
+/* =========================
+   SEND BUTTON
+========================= */
+
+sendBtn?.addEventListener(
+    "click",
+    sendMessage
+);
+
+
+/* =========================
+   ENTER TO SEND
+========================= */
+
+userInput?.addEventListener(
+    "keydown",
+    event => {
+
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey
+        ) {
+
+            event.preventDefault();
+
+            sendMessage();
+        }
+    }
+);
+
+
+/* =========================
+   FILE TO BASE64
+========================= */
+
+function fileToBase64(file) {
+
+    return new Promise(
+        (resolve, reject) => {
+
+            const reader =
+                new FileReader();
+
+            reader.onload = () => {
+
+                resolve(
+                    reader.result
+                );
+            };
+
+            reader.onerror =
+                () => {
+
+                    reject(
+                        new Error(
+                            "Could not read file."
+                        )
+                    );
+
+                };
+
+            reader.readAsDataURL(file);
+        }
+    );
+}
+
+
+/* =========================
+   SEND MESSAGE
+========================= */
+
+async function sendMessage() {
+
+    if (sending) return;
+
+
+    const text =
+        userInput?.value.trim() || "";
+
+
+    const hasImage =
+        !!selectedImage;
+
+    const hasVideo =
+        !!selectedVideo;
+
+
+    /*
+     * IMPORTANT:
+     *
+     * If there is NO image/video,
+     * send ONLY the text.
+     *
+     * This prevents large attachment
+     * data from being accidentally sent
+     * with news/text questions.
+     */
+
+    if (
+        !text &&
+        !hasImage &&
+        !hasVideo &&
+        !selectedFile
+    ) {
+
+        return;
+    }
+
+
+    sending = true;
+
+
+    if (sendBtn) {
+        sendBtn.disabled = true;
+    }
+
+
+    try {
+
+        /* =========================
+           SHOW USER MESSAGE
+        ========================= */
+
+        let attachment = null;
+
+
+        if (hasImage) {
+
+            attachment = {
+                type: "image",
+                url:
+                    URL.createObjectURL(
+                        selectedImage
+                    )
+            };
+
+        }
+
+        else if (hasVideo) {
+
+            attachment = {
+                type: "video",
+                url:
+                    URL.createObjectURL(
+                        selectedVideo
+                    )
+            };
+
+        }
+
+        else if (selectedFile) {
+
+            attachment = {
+                type: "file",
+                name:
+                    selectedFile.name
+            };
+
+        }
+
+
+        addMessage(
+            text,
+            "user",
+            attachment
         );
 
 
-        thinking?.remove();
+        /* =========================
+           BUILD REQUEST
+        ========================= */
+
+        const requestBody = {
+
+            /*
+             * ALWAYS send text.
+             */
+
+            message: text
+
+        };
+
+
+        /*
+         * IMAGE
+         *
+         * Only send image when an image
+         * is actually selected.
+         */
+
+        if (hasImage) {
+
+            requestBody.image =
+                await fileToBase64(
+                    selectedImage
+                );
+
+        }
+
+
+        /*
+         * VIDEO
+         *
+         * Do NOT send the entire video.
+         *
+         * Instead create only a maximum
+         * of 2 small preview frames.
+         */
+
+        if (hasVideo) {
+
+            const frames =
+                await createVideoFrames(
+                    selectedVideo
+                );
+
+            if (frames.length > 0) {
+
+                requestBody.videoFrames =
+                    frames;
+
+            }
+
+        }
+
+
+        /*
+         * Think Harder
+         */
+
+        requestBody.thinkHarder =
+            thinkHarder;
+
+
+        /* =========================
+           CLEAR INPUT
+        ========================= */
+
+        if (userInput) {
+
+            userInput.value = "";
+
+            userInput.style.height =
+                "auto";
+        }
+
+
+        clearAttachment();
+
+
+        /* =========================
+           AI LOADING MESSAGE
+        ========================= */
+
+        const loading =
+            addMessage(
+                "Thinking...",
+                "ai"
+            );
+
+
+        /* =========================
+           API REQUEST
+        ========================= */
+
+        const response =
+            await fetch(
+                "/api/gemini",
+                {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    /*
+                     * IMPORTANT:
+                     *
+                     * For normal text/news,
+                     * this contains ONLY:
+                     *
+                     * {
+                     *   message: "..."
+                     * }
+                     *
+                     * No old image/video data.
+                     */
+
+                    body:
+                        JSON.stringify(
+                            requestBody
+                        )
+                }
+            );
+
+
+        let data = null;
+
+
+        try {
+
+            data =
+                await response.json();
+
+        } catch {
+
+            throw new Error(
+                "Invalid server response."
+            );
+
+        }
+
+
+        /* =========================
+           SERVER ERROR
+        ========================= */
+
+        if (!response.ok) {
+
+            throw new Error(
+                data?.error ||
+                `Server error: ${response.status}`
+            );
+
+        }
+
+
+        /* =========================
+           AI RESPONSE
+        ========================= */
+
+        const reply =
+            data?.text ||
+            "No response from AI.";
+
+
+        if (loading) {
+
+            loading.innerHTML = "";
+
+            const textBox =
+                document.createElement(
+                    "div"
+                );
+
+            textBox.textContent =
+                reply;
+
+            loading.appendChild(
+                textBox
+            );
+
+        }
+
+
+        messages.scrollTop =
+            messages.scrollHeight;
+
+
+    } catch (error) {
+
+        console.error(
+            "SwiftCortex:",
+            error
+        );
 
 
         addMessage(
@@ -1344,14 +1706,202 @@ async function sendMessage() {
             "ai"
         );
 
+    } finally {
+
+        sending = false;
+
+
+        if (sendBtn) {
+            sendBtn.disabled = false;
+        }
+
     }
 
+}
 
-    sending = false;
 
-    sendBtn.disabled = false;
+/* =========================
+   VIDEO FRAME CREATOR
+========================= */
 
-    userInput?.focus();
+function createVideoFrames(file) {
+
+    return new Promise(
+        resolve => {
+
+            const video =
+                document.createElement(
+                    "video"
+                );
+
+            const url =
+                URL.createObjectURL(
+                    file
+                );
+
+            video.src = url;
+
+            video.muted = true;
+
+            video.playsInline = true;
+
+            video.preload = "metadata";
+
+
+            video.onloadedmetadata =
+                () => {
+
+                    const duration =
+                        video.duration || 1;
+
+
+                    /*
+                     * Only TWO frames.
+                     *
+                     * This keeps request size
+                     * much smaller.
+                     */
+
+                    const times = [
+
+                        0,
+
+                        Math.max(
+                            0,
+                            duration / 2
+                        )
+
+                    ];
+
+
+                    const frames = [];
+
+                    let index = 0;
+
+
+                    function captureNext() {
+
+                        if (
+                            index >=
+                            times.length
+                        ) {
+
+                            URL.revokeObjectURL(
+                                url
+                            );
+
+                            resolve(
+                                frames
+                            );
+
+                            return;
+                        }
+
+
+                        video.currentTime =
+                            times[index];
+
+                    }
+
+
+                    video.onseeked =
+                        () => {
+
+                            const canvas =
+                                document.createElement(
+                                    "canvas"
+                                );
+
+
+                            /*
+                             * Small resolution
+                             * to prevent 413.
+                             */
+
+                            const maxWidth =
+                                640;
+
+
+                            const scale =
+                                Math.min(
+                                    1,
+                                    maxWidth /
+                                    video.videoWidth
+                                );
+
+
+                            canvas.width =
+                                Math.max(
+                                    1,
+                                    Math.floor(
+                                        video.videoWidth *
+                                        scale
+                                    )
+                                );
+
+
+                            canvas.height =
+                                Math.max(
+                                    1,
+                                    Math.floor(
+                                        video.videoHeight *
+                                        scale
+                                    )
+                                );
+
+
+                            const ctx =
+                                canvas.getContext(
+                                    "2d"
+                                );
+
+
+                            if (ctx) {
+
+                                ctx.drawImage(
+                                    video,
+                                    0,
+                                    0,
+                                    canvas.width,
+                                    canvas.height
+                                );
+
+
+                                frames.push(
+                                    canvas.toDataURL(
+                                        "image/jpeg",
+                                        0.65
+                                    )
+                                );
+
+                            }
+
+
+                            index++;
+
+                            captureNext();
+
+                        };
+
+
+                    captureNext();
+
+                };
+
+
+            video.onerror =
+                () => {
+
+                    URL.revokeObjectURL(
+                        url
+                    );
+
+                    resolve([]);
+
+                };
+
+        }
+    );
 }
 
 
@@ -1359,21 +1909,37 @@ async function sendMessage() {
    NEW CHAT
 ========================= */
 
-$("newChat")?.addEventListener(
+const newChat =
+    $("newChat");
+
+const historyList =
+    $("historyList");
+
+
+newChat?.addEventListener(
     "click",
     () => {
 
-        messages.innerHTML = "";
+        if (messages) {
 
-        addMessage(
-            "👋 Hello! I am SwiftCortex AI. How can I help you?"
-        );
+            messages.innerHTML = "";
+
+            addMessage(
+                "👋 Hello! I am SwiftCortex AI. How can I help you?"
+            );
+
+        }
 
         clearAttachment();
 
-        userInput.value = "";
+        if (userInput) {
 
-        resizeInput();
+            userInput.value = "";
+
+            userInput.style.height =
+                "auto";
+        }
+
     }
 );
 
@@ -1382,7 +1948,11 @@ $("newChat")?.addEventListener(
    THEME
 ========================= */
 
-$("themeBtn")?.addEventListener(
+const themeBtn =
+    $("themeBtn");
+
+
+themeBtn?.addEventListener(
     "click",
     () => {
 
@@ -1390,48 +1960,14 @@ $("themeBtn")?.addEventListener(
             "light-mode"
         );
 
-
-        const light =
-            document.body.classList.contains(
-                "light-mode"
-            );
-
-
-        $("themeBtn").textContent =
-            light
-                ? "☀️ Light Mode"
-                : "🌙 Dark Mode";
     }
 );
 
 
 /* =========================
-   ESC CLOSE CAMERA
+   INITIAL STATE
 ========================= */
-
-document.addEventListener(
-    "keydown",
-    event => {
-
-        if (
-            event.key === "Escape" &&
-            cameraModal?.classList.contains(
-                "show"
-            )
-        ) {
-
-            closeCamera();
-        }
-    }
-);
-
-
-/* =========================
-   START
-========================= */
-
-resizeInput();
 
 console.log(
-    "⚡ SwiftCortex AI Ultra ready"
+    "⚡ SwiftCortex AI Ultra loaded successfully."
 );
