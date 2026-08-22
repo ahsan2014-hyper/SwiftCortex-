@@ -377,9 +377,268 @@ document.addEventListener("DOMContentLoaded", function () {
 
             closeMenu();
 
-            alert(
-                "🧩 Plugins\n\nPlugin system is ready."
+            if (pluginBtn) {
+
+    pluginBtn.onclick = function (event) {
+
+        event.preventDefault();
+
+        closeMenu();
+
+        openPluginPanel();
+
+    };
+
+}
+
+
+/* =====================================================
+   PLUGIN PANEL
+===================================================== */
+
+function openPluginPanel() {
+
+    let panel =
+        document.getElementById("swiftPluginPanel");
+
+    if (!panel) {
+
+        panel =
+            document.createElement("div");
+
+        panel.id =
+            "swiftPluginPanel";
+
+        panel.innerHTML = `
+
+            <div class="plugin-panel-box">
+
+                <div class="plugin-header">
+
+                    <div>
+                        <h2>🧩 Plugins</h2>
+                        <p>Choose a tool for SwiftCortex AI</p>
+                    </div>
+
+                    <button
+                        id="pluginClose"
+                        class="plugin-close"
+                    >
+                        ✕
+                    </button>
+
+                </div>
+
+
+                <div class="plugin-grid">
+
+                    <button
+                        class="plugin-card"
+                        data-plugin="web"
+                    >
+                        <span>🌐</span>
+                        <strong>Web Search</strong>
+                        <small>Search the web</small>
+                    </button>
+
+
+                    <button
+                        class="plugin-card"
+                        data-plugin="calculator"
+                    >
+                        <span>🧮</span>
+                        <strong>Calculator</strong>
+                        <small>Calculate anything</small>
+                    </button>
+
+
+                    <button
+                        class="plugin-card"
+                        data-plugin="weather"
+                    >
+                        <span>🌤</span>
+                        <strong>Weather</strong>
+                        <small>Check weather</small>
+                    </button>
+
+
+                    <button
+                        class="plugin-card"
+                        data-plugin="image"
+                    >
+                        <span>🖼</span>
+                        <strong>Image Tools</strong>
+                        <small>Work with images</small>
+                    </button>
+
+
+                    <button
+                        class="plugin-card"
+                        data-plugin="files"
+                    >
+                        <span>📄</span>
+                        <strong>File Tools</strong>
+                        <small>Work with files</small>
+                    </button>
+
+
+                    <button
+                        class="plugin-card"
+                        data-plugin="more"
+                    >
+                        <span>🔌</span>
+                        <strong>More Plugins</strong>
+                        <small>Coming soon</small>
+                    </button>
+
+                </div>
+
+            </div>
+
+        `;
+
+        document.body.appendChild(panel);
+
+
+        /* Close */
+
+        document
+            .getElementById("pluginClose")
+            .onclick = function () {
+
+                closePluginPanel();
+
+            };
+
+
+        /* Plugin buttons */
+
+        panel
+            .querySelectorAll(".plugin-card")
+            .forEach(function (button) {
+
+                button.onclick =
+                    function () {
+
+                        const plugin =
+                            button.dataset.plugin;
+
+                        handlePlugin(plugin);
+
+                    };
+
+            });
+
+    }
+
+
+    panel.classList.add("active");
+
+}
+
+
+/* =====================================================
+   CLOSE PLUGIN PANEL
+===================================================== */
+
+function closePluginPanel() {
+
+    const panel =
+        document.getElementById(
+            "swiftPluginPanel"
+        );
+
+    if (panel) {
+
+        panel.classList.remove(
+            "active"
+        );
+
+    }
+
+}
+
+
+/* =====================================================
+   PLUGIN ACTION
+===================================================== */
+
+function handlePlugin(plugin) {
+
+    switch (plugin) {
+
+        case "web":
+
+            closePluginPanel();
+
+            addMessage(
+                "🌐 Web Search plugin selected.",
+                "ai"
             );
+
+            break;
+
+
+        case "calculator":
+
+            closePluginPanel();
+
+            addMessage(
+                "🧮 Calculator plugin selected.",
+                "ai"
+            );
+
+            break;
+
+
+        case "weather":
+
+            closePluginPanel();
+
+            addMessage(
+                "🌤 Weather plugin selected.",
+                "ai"
+            );
+
+            break;
+
+
+        case "image":
+
+            closePluginPanel();
+
+            addMessage(
+                "🖼 Image Tools plugin selected.",
+                "ai"
+            );
+
+            break;
+
+
+        case "files":
+
+            closePluginPanel();
+
+            addMessage(
+                "📄 File Tools plugin selected.",
+                "ai"
+            );
+
+            break;
+
+
+        case "more":
+
+            addMessage(
+                "🔌 More plugins are coming soon.",
+                "ai"
+            );
+
+            break;
+
+    }
+
+}
 
         };
 
