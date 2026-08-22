@@ -220,3 +220,346 @@ document.addEventListener("DOMContentLoaded", function () {
     );
 
 });
+/* =========================================================
+   PLUS MENU OPTIONS
+========================================================= */
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const plusMenu =
+        document.getElementById("plusMenu");
+
+    const cameraBtn =
+        document.getElementById("cameraBtn");
+
+    const photoBtn =
+        document.getElementById("photoBtn");
+
+    const fileBtn =
+        document.getElementById("fileBtn");
+
+    const pluginBtn =
+        document.getElementById("pluginBtn");
+
+    const thinkBtn =
+        document.getElementById("thinkBtn");
+
+    const imageInput =
+        document.getElementById("imageInput");
+
+    const fileInput =
+        document.getElementById("fileInput");
+
+    const cameraModal =
+        document.getElementById("cameraModal");
+
+
+    /* Close menu */
+
+    function closeMenu() {
+
+        if (plusMenu) {
+            plusMenu.classList.remove("show");
+        }
+
+    }
+
+
+    /* =====================================================
+       📷 CAMERA
+    ===================================================== */
+
+    if (cameraBtn) {
+
+        cameraBtn.onclick = async function () {
+
+            closeMenu();
+
+            if (!cameraModal) {
+                alert("Camera interface not found.");
+                return;
+            }
+
+            cameraModal.classList.add("show");
+
+            const video =
+                document.getElementById("cameraVideo");
+
+            try {
+
+                const stream =
+                    await navigator.mediaDevices.getUserMedia({
+                        video: true,
+                        audio: true
+                    });
+
+                window.swiftCameraStream = stream;
+
+                if (video) {
+                    video.srcObject = stream;
+                    await video.play();
+                }
+
+            } catch (error) {
+
+                console.error(
+                    "Camera error:",
+                    error
+                );
+
+                const errorText =
+                    document.getElementById(
+                        "cameraErrorText"
+                    );
+
+                if (errorText) {
+                    errorText.textContent =
+                        "Camera permission denied or camera unavailable.";
+                }
+
+                const errorBox =
+                    document.getElementById(
+                        "cameraError"
+                    );
+
+                if (errorBox) {
+                    errorBox.style.display = "flex";
+                }
+
+            }
+
+        };
+
+    }
+
+
+    /* =====================================================
+       🖼 PHOTOS
+    ===================================================== */
+
+    if (photoBtn && imageInput) {
+
+        photoBtn.onclick = function () {
+
+            closeMenu();
+
+            imageInput.click();
+
+        };
+
+    }
+
+
+    /* =====================================================
+       📄 FILES
+    ===================================================== */
+
+    if (fileBtn && fileInput) {
+
+        fileBtn.onclick = function () {
+
+            closeMenu();
+
+            fileInput.click();
+
+        };
+
+    }
+
+
+    /* =====================================================
+       🧩 PLUGINS
+    ===================================================== */
+
+    if (pluginBtn) {
+
+        pluginBtn.onclick = function () {
+
+            closeMenu();
+
+            alert(
+                "🧩 Plugins\n\nPlugin system is ready."
+            );
+
+        };
+
+    }
+
+
+    /* =====================================================
+       🧠 THINK HARDER
+    ===================================================== */
+
+    if (thinkBtn) {
+
+        thinkBtn.onclick = function () {
+
+            closeMenu();
+
+            window.swiftCortexThinkHarder =
+                !window.swiftCortexThinkHarder;
+
+            if (
+                window.swiftCortexThinkHarder
+            ) {
+
+                thinkBtn.textContent =
+                    "🧠 Think Harder ✓";
+
+            } else {
+
+                thinkBtn.textContent =
+                    "🧠 Think Harder";
+
+            }
+
+            console.log(
+                "Think Harder:",
+                window.swiftCortexThinkHarder
+            );
+
+        };
+
+    }
+
+
+    /* =====================================================
+       CAMERA CLOSE
+    ===================================================== */
+
+    const cameraClose =
+        document.getElementById("cameraClose");
+
+
+    if (cameraClose) {
+
+        cameraClose.onclick = function () {
+
+            if (
+                window.swiftCameraStream
+            ) {
+
+                window.swiftCameraStream
+                    .getTracks()
+                    .forEach(
+                        track => track.stop()
+                    );
+
+                window.swiftCameraStream =
+                    null;
+
+            }
+
+            if (cameraModal) {
+                cameraModal.classList.remove(
+                    "show"
+                );
+            }
+
+        };
+
+    }
+
+
+    /* =====================================================
+       PHOTO SELECTED
+    ===================================================== */
+
+    if (imageInput) {
+
+        imageInput.onchange =
+            function () {
+
+                const file =
+                    imageInput.files[0];
+
+                if (!file) return;
+
+                console.log(
+                    "🖼 Photo selected:",
+                    file.name
+                );
+
+                const preview =
+                    document.getElementById(
+                        "imagePreview"
+                    );
+
+                if (preview) {
+
+                    preview.innerHTML = "";
+
+                    const img =
+                        document.createElement(
+                            "img"
+                        );
+
+                    img.src =
+                        URL.createObjectURL(
+                            file
+                        );
+
+                    img.style.maxWidth =
+                        "180px";
+
+                    img.style.maxHeight =
+                        "130px";
+
+                    img.style.borderRadius =
+                        "12px";
+
+                    preview.appendChild(img);
+
+                }
+
+                /*
+                 Store image globally.
+                 Your existing sendMessage()
+                 can use this later.
+                */
+
+                window.swiftCortexSelectedImage =
+                    file;
+
+            };
+
+    }
+
+
+    /* =====================================================
+       FILE SELECTED
+    ===================================================== */
+
+    if (fileInput) {
+
+        fileInput.onchange =
+            function () {
+
+                const file =
+                    fileInput.files[0];
+
+                if (!file) return;
+
+                console.log(
+                    "📄 File selected:",
+                    file.name
+                );
+
+                window.swiftCortexSelectedFile =
+                    file;
+
+                alert(
+                    "📄 File selected:\n" +
+                    file.name
+                );
+
+            };
+
+    }
+
+
+    console.log(
+        "✅ Plus options initialized"
+    );
+
+});
