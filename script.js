@@ -1,58 +1,82 @@
-/* =========================================================
-   SwiftCortex AI Ultra
-   Complete script.js
-   Text + Images + Files + Camera + Video
-   Plugins + Think Harder
-   ========================================================= */
-
 "use strict";
 
 /* =========================================================
-   ELEMENTS
+   SwiftCortex AI Ultra
+   COMPLETE script.js
+
+   Features:
+   ✅ Normal text chat
+   ✅ Plus menu
+   ✅ Camera photo
+   ✅ Camera video
+   ✅ Front/back camera
+   ✅ Photos
+   ✅ Files
+   ✅ Image + description
+   ✅ Video + description
+   ✅ Plugins menu
+   ✅ Think Harder
+   ✅ Enter to send
+   ✅ Attachment preview
+   ✅ Vercel /api/gemini
+========================================================= */
+
+
+/* =========================================================
+   ELEMENT HELPER
 ========================================================= */
 
 const $ = (id) => document.getElementById(id);
 
-const plusBtn       = $("plusBtn");
-const plusMenu      = $("plusMenu");
 
-const cameraBtn     = $("cameraBtn");
-const photoBtn      = $("photoBtn");
-const fileBtn       = $("fileBtn");
-const pluginBtn     = $("pluginBtn");
-const thinkBtn      = $("thinkBtn");
+/* =========================================================
+   MAIN ELEMENTS
+========================================================= */
 
-const imageInput    = $("imageInput");
-const fileInput     = $("fileInput");
+const plusBtn      = $("plusBtn");
+const plusMenu     = $("plusMenu");
 
-const userInput     = $("userInput");
-const sendBtn       = $("sendBtn");
+const cameraBtn    = $("cameraBtn");
+const photoBtn     = $("photoBtn");
+const fileBtn      = $("fileBtn");
+const pluginBtn    = $("pluginBtn");
+const thinkBtn     = $("thinkBtn");
 
-const messages      = $("messages");
-const imagePreview  = $("imagePreview");
+const imageInput   = $("imageInput");
+const fileInput    = $("fileInput");
 
-const newChat       = $("newChat");
-const themeBtn      = $("themeBtn");
-const historyList   = $("historyList");
+const userInput    = $("userInput");
+const sendBtn      = $("sendBtn");
 
-/* Camera */
+const messages     = $("messages");
+const imagePreview = $("imagePreview");
 
-const cameraModal   = $("cameraModal");
-const cameraClose   = $("cameraClose");
-const cameraVideo   = $("cameraVideo");
-const cameraError   = $("cameraError");
+const newChat      = $("newChat");
+const themeBtn     = $("themeBtn");
+const historyList  = $("historyList");
+
+
+/* =========================================================
+   CAMERA ELEMENTS
+========================================================= */
+
+const cameraModal     = $("cameraModal");
+const cameraClose     = $("cameraClose");
+const cameraVideo     = $("cameraVideo");
+
+const cameraError     = $("cameraError");
 const cameraErrorText = $("cameraErrorText");
 
-const photoMode     = $("photoMode");
-const videoMode     = $("videoMode");
+const photoMode       = $("photoMode");
+const videoMode       = $("videoMode");
 
-const takePhoto     = $("takePhoto");
-const startRecord   = $("startRecord");
-const stopRecord    = $("stopRecord");
+const takePhoto       = $("takePhoto");
+const startRecord     = $("startRecord");
+const stopRecord      = $("stopRecord");
 
-const switchCamera  = $("switchCamera");
-const recordTime    = $("recordTime");
-const mediaResult   = $("mediaResult");
+const switchCamera    = $("switchCamera");
+const recordTime      = $("recordTime");
+const mediaResult     = $("mediaResult");
 
 
 /* =========================================================
@@ -63,30 +87,67 @@ let selectedImage = null;
 let selectedVideo = null;
 
 let cameraStream = null;
+
 let mediaRecorder = null;
 let recordedChunks = [];
 
 let cameraFacing = "user";
-let cameraMode = "photo";
+let currentCameraMode = "photo";
 
 let recordingSeconds = 0;
 let recordingTimer = null;
 
 let isSending = false;
-let thinkHarder = false;
+
+let thinkHarderEnabled = false;
 
 
 /* =========================================================
-   SMALL HELPERS
+   BASIC HELPERS
 ========================================================= */
 
-function exists(element) {
-    return element !== null && element !== undefined;
+function closePlusMenu() {
+
+    if (plusMenu) {
+        plusMenu.classList.remove("show");
+    }
+
 }
 
 
-function escapeText(text) {
-    return String(text ?? "");
+function showText(text, sender = "ai") {
+
+    if (!messages) return null;
+
+    const box = document.createElement("div");
+
+    box.className =
+        sender === "user"
+            ? "user-message"
+            : "ai-message";
+
+    box.textContent = text;
+
+    messages.appendChild(box);
+
+    scrollMessages();
+
+    return box;
+
+}
+
+
+function scrollMessages() {
+
+    if (!messages) return;
+
+    requestAnimationFrame(() => {
+
+        messages.scrollTop =
+            messages.scrollHeight;
+
+    });
+
 }
 
 
@@ -94,7 +155,7 @@ function escapeText(text) {
    PLUS MENU
 ========================================================= */
 
-if (exists(plusBtn) && exists(plusMenu)) {
+if (plusBtn && plusMenu) {
 
     plusBtn.addEventListener("click", function (event) {
 
@@ -110,38 +171,33 @@ if (exists(plusBtn) && exists(plusMenu)) {
 
 document.addEventListener("click", function (event) {
 
-    if (!exists(plusMenu)) return;
+    if (!plusMenu) return;
 
     if (
-        !plusMenu.contains(event.target) &&
-        event.target !== plusBtn
+        event.target !== plusBtn &&
+        !plusMenu.contains(event.target)
     ) {
-        plusMenu.classList.remove("show");
+
+        closePlusMenu();
+
     }
 
 });
-
-
-function closePlusMenu() {
-
-    if (exists(plusMenu)) {
-        plusMenu.classList.remove("show");
-    }
-
-}
 
 
 /* =========================================================
    PHOTO BUTTON
 ========================================================= */
 
-if (exists(photoBtn) && exists(imageInput)) {
+if (photoBtn && imageInput) {
 
     photoBtn.addEventListener("click", function (event) {
 
         event.preventDefault();
 
         closePlusMenu();
+
+        imageInput.value = "";
 
         imageInput.click();
 
@@ -151,32 +207,32 @@ if (exists(photoBtn) && exists(imageInput)) {
 
 
 /* =========================================================
-   IMAGE INPUT
+   IMAGE SELECTED
 ========================================================= */
 
-if (exists(imageInput)) {
+if (imageInput) {
 
     imageInput.addEventListener("change", function () {
 
-        const file = imageInput.files?.[0];
+        const file = this.files && this.files[0];
 
         if (!file) return;
 
         if (!file.type.startsWith("image/")) {
 
-            showSystemMessage(
+            showText(
                 "⚠️ Please select a valid image.",
                 "ai"
             );
 
-            imageInput.value = "";
             return;
+
         }
 
         selectedImage = file;
         selectedVideo = null;
 
-        showAttachmentPreview(file, "image");
+        showAttachment(file, "image");
 
     });
 
@@ -187,13 +243,15 @@ if (exists(imageInput)) {
    FILE BUTTON
 ========================================================= */
 
-if (exists(fileBtn) && exists(fileInput)) {
+if (fileBtn && fileInput) {
 
     fileBtn.addEventListener("click", function (event) {
 
         event.preventDefault();
 
         closePlusMenu();
+
+        fileInput.value = "";
 
         fileInput.click();
 
@@ -203,42 +261,185 @@ if (exists(fileBtn) && exists(fileInput)) {
 
 
 /* =========================================================
-   FILE INPUT
+   FILE SELECTED
 ========================================================= */
 
-if (exists(fileInput)) {
+if (fileInput) {
 
     fileInput.addEventListener("change", function () {
 
-        const file = fileInput.files?.[0];
+        const file = this.files && this.files[0];
 
         if (!file) return;
+
+
+        /* IMAGE */
 
         if (file.type.startsWith("image/")) {
 
             selectedImage = file;
             selectedVideo = null;
 
-            showAttachmentPreview(file, "image");
+            showAttachment(file, "image");
+
+            return;
 
         }
 
-        else if (file.type.startsWith("video/")) {
+
+        /* VIDEO */
+
+        if (file.type.startsWith("video/")) {
 
             selectedVideo = file;
             selectedImage = null;
 
-            showAttachmentPreview(file, "video");
+            showAttachment(file, "video");
+
+            return;
 
         }
 
-        else {
 
-            showAttachmentPreview(file, "file");
+        /* OTHER FILE */
 
-        }
+        showAttachment(file, "file");
 
     });
+
+}
+
+
+/* =========================================================
+   SHOW ATTACHMENT
+========================================================= */
+
+function showAttachment(file, type) {
+
+    if (!imagePreview) return;
+
+    imagePreview.innerHTML = "";
+
+    const wrapper =
+        document.createElement("div");
+
+    wrapper.style.display = "flex";
+    wrapper.style.alignItems = "center";
+    wrapper.style.gap = "10px";
+    wrapper.style.padding = "8px";
+    wrapper.style.margin = "5px 0";
+    wrapper.style.borderRadius = "12px";
+    wrapper.style.background = "#111827";
+
+
+    /* IMAGE */
+
+    if (type === "image") {
+
+        const img =
+            document.createElement("img");
+
+        img.src =
+            URL.createObjectURL(file);
+
+        img.style.width = "65px";
+        img.style.height = "65px";
+        img.style.objectFit = "cover";
+        img.style.borderRadius = "10px";
+
+        wrapper.appendChild(img);
+
+    }
+
+
+    /* VIDEO */
+
+    if (type === "video") {
+
+        const video =
+            document.createElement("video");
+
+        video.src =
+            URL.createObjectURL(file);
+
+        video.muted = true;
+        video.controls = true;
+
+        video.style.width = "100px";
+        video.style.height = "65px";
+        video.style.objectFit = "cover";
+        video.style.borderRadius = "10px";
+
+        wrapper.appendChild(video);
+
+    }
+
+
+    const info =
+        document.createElement("div");
+
+    info.style.flex = "1";
+
+    info.style.color = "white";
+
+    info.textContent =
+        type === "image"
+            ? "🖼 " + file.name
+            : type === "video"
+                ? "🎥 " + file.name
+                : "📄 " + file.name;
+
+    wrapper.appendChild(info);
+
+
+    const remove =
+        document.createElement("button");
+
+    remove.type = "button";
+
+    remove.textContent = "✕";
+
+    remove.style.border = "none";
+    remove.style.background = "#374151";
+    remove.style.color = "white";
+    remove.style.borderRadius = "8px";
+    remove.style.padding = "7px 10px";
+    remove.style.cursor = "pointer";
+
+    remove.onclick = function () {
+
+        clearAttachment();
+
+    };
+
+
+    wrapper.appendChild(remove);
+
+    imagePreview.appendChild(wrapper);
+
+}
+
+
+/* =========================================================
+   CLEAR ATTACHMENT
+========================================================= */
+
+function clearAttachment() {
+
+    selectedImage = null;
+    selectedVideo = null;
+
+    if (imageInput) {
+        imageInput.value = "";
+    }
+
+    if (fileInput) {
+        fileInput.value = "";
+    }
+
+    if (imagePreview) {
+        imagePreview.innerHTML = "";
+    }
 
 }
 
@@ -247,7 +448,7 @@ if (exists(fileInput)) {
    CAMERA BUTTON
 ========================================================= */
 
-if (exists(cameraBtn)) {
+if (cameraBtn) {
 
     cameraBtn.addEventListener("click", async function (event) {
 
@@ -268,11 +469,11 @@ if (exists(cameraBtn)) {
 
 async function openCamera() {
 
-    if (!exists(cameraModal)) return;
+    if (!cameraModal) return;
 
     cameraModal.classList.add("show");
 
-    if (exists(cameraError)) {
+    if (cameraError) {
         cameraError.classList.remove("show");
     }
 
@@ -282,7 +483,7 @@ async function openCamera() {
 
     } catch (error) {
 
-        console.error("Camera error:", error);
+        console.error("Camera:", error);
 
         showCameraError(error);
 
@@ -310,31 +511,42 @@ async function startCamera() {
 
     }
 
+
     cameraStream =
         await navigator.mediaDevices.getUserMedia({
 
             video: {
+
                 facingMode: cameraFacing,
+
                 width: {
                     ideal: 1280
                 },
+
                 height: {
                     ideal: 720
                 }
+
             },
 
             audio: true
 
         });
 
-    if (exists(cameraVideo)) {
 
-        cameraVideo.srcObject = cameraStream;
+    if (cameraVideo) {
+
+        cameraVideo.srcObject =
+            cameraStream;
 
         try {
+
             await cameraVideo.play();
+
         } catch (error) {
-            console.log("Video autoplay:", error);
+
+            console.log(error);
+
         }
 
     }
@@ -348,42 +560,45 @@ async function startCamera() {
 
 function showCameraError(error) {
 
-    if (!exists(cameraError)) return;
+    if (!cameraError) return;
 
     cameraError.classList.add("show");
 
-    let message =
+    let text =
         "Camera permission is required.";
 
     if (error?.name === "NotAllowedError") {
 
-        message =
+        text =
             "Camera permission was denied. Please allow camera access.";
 
     }
 
     else if (error?.name === "NotFoundError") {
 
-        message =
+        text =
             "No camera was found on this device.";
 
     }
 
     else if (error?.name === "NotReadableError") {
 
-        message =
-            "The camera is already being used by another application.";
+        text =
+            "The camera is currently being used by another application.";
 
     }
 
     else if (error?.message) {
 
-        message = error.message;
+        text = error.message;
 
     }
 
-    if (exists(cameraErrorText)) {
-        cameraErrorText.textContent = message;
+    if (cameraErrorText) {
+
+        cameraErrorText.textContent =
+            text;
+
     }
 
 }
@@ -393,7 +608,7 @@ function showCameraError(error) {
    CLOSE CAMERA
 ========================================================= */
 
-if (exists(cameraClose)) {
+if (cameraClose) {
 
     cameraClose.addEventListener("click", function () {
 
@@ -409,8 +624,10 @@ function closeCamera() {
     stopRecording();
     stopCamera();
 
-    if (exists(cameraModal)) {
+    if (cameraModal) {
+
         cameraModal.classList.remove("show");
+
     }
 
 }
@@ -424,16 +641,18 @@ function stopCamera() {
 
     if (cameraStream) {
 
-        cameraStream.getTracks().forEach(function (track) {
-            track.stop();
-        });
+        cameraStream
+            .getTracks()
+            .forEach(track => track.stop());
 
         cameraStream = null;
 
     }
 
-    if (exists(cameraVideo)) {
+    if (cameraVideo) {
+
         cameraVideo.srcObject = null;
+
     }
 
 }
@@ -443,31 +662,31 @@ function stopCamera() {
    PHOTO MODE
 ========================================================= */
 
-if (exists(photoMode)) {
+if (photoMode) {
 
     photoMode.addEventListener("click", async function () {
 
-        cameraMode = "photo";
+        currentCameraMode = "photo";
 
         photoMode.classList.add("active");
 
-        if (exists(videoMode)) {
+        if (videoMode) {
             videoMode.classList.remove("active");
         }
 
-        if (exists(takePhoto)) {
+        if (takePhoto) {
             takePhoto.style.display = "inline-flex";
         }
 
-        if (exists(startRecord)) {
+        if (startRecord) {
             startRecord.style.display = "none";
         }
 
-        if (exists(stopRecord)) {
+        if (stopRecord) {
             stopRecord.style.display = "none";
         }
 
-        if (exists(recordTime)) {
+        if (recordTime) {
             recordTime.classList.remove("show");
         }
 
@@ -490,27 +709,27 @@ if (exists(photoMode)) {
    VIDEO MODE
 ========================================================= */
 
-if (exists(videoMode)) {
+if (videoMode) {
 
     videoMode.addEventListener("click", async function () {
 
-        cameraMode = "video";
+        currentCameraMode = "video";
 
         videoMode.classList.add("active");
 
-        if (exists(photoMode)) {
+        if (photoMode) {
             photoMode.classList.remove("active");
         }
 
-        if (exists(takePhoto)) {
+        if (takePhoto) {
             takePhoto.style.display = "none";
         }
 
-        if (exists(startRecord)) {
+        if (startRecord) {
             startRecord.style.display = "inline-flex";
         }
 
-        if (exists(stopRecord)) {
+        if (stopRecord) {
             stopRecord.style.display = "none";
         }
 
@@ -533,7 +752,7 @@ if (exists(videoMode)) {
    TAKE PHOTO
 ========================================================= */
 
-if (exists(takePhoto)) {
+if (takePhoto) {
 
     takePhoto.addEventListener("click", function () {
 
@@ -544,19 +763,26 @@ if (exists(takePhoto)) {
 }
 
 
+/* =========================================================
+   CAPTURE PHOTO
+========================================================= */
+
 function capturePhoto() {
 
     if (!cameraVideo || !cameraStream) {
 
-        showCameraError(
-            new Error("Camera is not ready.")
+        showText(
+            "⚠️ Camera is not ready.",
+            "ai"
         );
 
         return;
 
     }
 
-    const canvas = document.createElement("canvas");
+
+    const canvas =
+        document.createElement("canvas");
 
     const width =
         cameraVideo.videoWidth || 1280;
@@ -567,9 +793,12 @@ function capturePhoto() {
     canvas.width = width;
     canvas.height = height;
 
-    const ctx = canvas.getContext("2d");
+
+    const ctx =
+        canvas.getContext("2d");
 
     if (!ctx) return;
+
 
     ctx.drawImage(
         cameraVideo,
@@ -579,32 +808,40 @@ function capturePhoto() {
         height
     );
 
+
     canvas.toBlob(function (blob) {
 
         if (!blob) {
 
-            showSystemMessage(
+            showText(
                 "⚠️ Could not capture photo.",
                 "ai"
             );
 
             return;
+
         }
 
-        const file = new File(
-            [blob],
-            "swiftcortex-photo-" +
-            Date.now() +
-            ".jpg",
-            {
-                type: "image/jpeg"
-            }
-        );
+
+        const file =
+            new File(
+                [blob],
+                "swiftcortex-photo-" +
+                Date.now() +
+                ".jpg",
+                {
+                    type: "image/jpeg"
+                }
+            );
+
 
         selectedImage = file;
         selectedVideo = null;
 
-        showAttachmentPreview(file, "image");
+        showAttachment(
+            file,
+            "image"
+        );
 
         closeCamera();
 
@@ -617,7 +854,7 @@ function capturePhoto() {
    SWITCH CAMERA
 ========================================================= */
 
-if (exists(switchCamera)) {
+if (switchCamera) {
 
     switchCamera.addEventListener("click", async function () {
 
@@ -642,10 +879,10 @@ if (exists(switchCamera)) {
 
 
 /* =========================================================
-   START VIDEO RECORDING
+   VIDEO RECORDING
 ========================================================= */
 
-if (exists(startRecord)) {
+if (startRecord) {
 
     startRecord.addEventListener("click", function () {
 
@@ -656,7 +893,7 @@ if (exists(startRecord)) {
 }
 
 
-function getSupportedMimeType() {
+function getVideoMimeType() {
 
     const types = [
 
@@ -665,6 +902,7 @@ function getSupportedMimeType() {
         "video/webm"
 
     ];
+
 
     for (const type of types) {
 
@@ -679,16 +917,21 @@ function getSupportedMimeType() {
 
     }
 
+
     return "";
 
 }
 
 
+/* =========================================================
+   START RECORDING
+========================================================= */
+
 function startVideoRecording() {
 
     if (!cameraStream) {
 
-        showSystemMessage(
+        showText(
             "⚠️ Camera is not ready.",
             "ai"
         );
@@ -697,10 +940,11 @@ function startVideoRecording() {
 
     }
 
+
     if (!window.MediaRecorder) {
 
-        showSystemMessage(
-            "❌ Video recording is not supported by this browser.",
+        showText(
+            "❌ Video recording is not supported.",
             "ai"
         );
 
@@ -708,9 +952,13 @@ function startVideoRecording() {
 
     }
 
+
     recordedChunks = [];
 
-    const mimeType = getSupportedMimeType();
+
+    const mimeType =
+        getVideoMimeType();
+
 
     try {
 
@@ -718,22 +966,27 @@ function startVideoRecording() {
             mimeType
                 ? new MediaRecorder(
                     cameraStream,
-                    { mimeType }
+                    {
+                        mimeType
+                    }
                 )
-                : new MediaRecorder(cameraStream);
+                : new MediaRecorder(
+                    cameraStream
+                );
 
     } catch (error) {
 
         console.error(error);
 
-        showSystemMessage(
-            "❌ Could not start video recording.",
+        showText(
+            "❌ Could not start recording.",
             "ai"
         );
 
         return;
 
     }
+
 
     mediaRecorder.ondataavailable =
         function (event) {
@@ -743,7 +996,9 @@ function startVideoRecording() {
                 event.data.size > 0
             ) {
 
-                recordedChunks.push(event.data);
+                recordedChunks.push(
+                    event.data
+                );
 
             }
 
@@ -753,28 +1008,31 @@ function startVideoRecording() {
     mediaRecorder.onstop =
         function () {
 
-            finishVideoRecording();
+            finishVideo();
 
         };
 
 
     mediaRecorder.start(250);
 
+
     recordingSeconds = 0;
 
     updateRecordingTime();
 
-    if (exists(recordTime)) {
+
+    if (recordTime) {
         recordTime.classList.add("show");
     }
 
-    if (exists(startRecord)) {
+    if (startRecord) {
         startRecord.style.display = "none";
     }
 
-    if (exists(stopRecord)) {
+    if (stopRecord) {
         stopRecord.style.display = "inline-flex";
     }
+
 
     recordingTimer =
         setInterval(function () {
@@ -794,13 +1052,16 @@ function startVideoRecording() {
 
 function updateRecordingTime() {
 
-    if (!exists(recordTime)) return;
+    if (!recordTime) return;
 
     const minutes =
-        Math.floor(recordingSeconds / 60);
+        Math.floor(
+            recordingSeconds / 60
+        );
 
     const seconds =
         recordingSeconds % 60;
+
 
     recordTime.textContent =
         "🔴 " +
@@ -815,7 +1076,7 @@ function updateRecordingTime() {
    STOP RECORDING BUTTON
 ========================================================= */
 
-if (exists(stopRecord)) {
+if (stopRecord) {
 
     stopRecord.addEventListener("click", function () {
 
@@ -836,6 +1097,7 @@ function stopRecording() {
 
     }
 
+
     if (
         mediaRecorder &&
         mediaRecorder.state !== "inactive"
@@ -845,8 +1107,14 @@ function stopRecording() {
 
     }
 
-    if (exists(stopRecord)) {
+
+    if (stopRecord) {
         stopRecord.style.display = "none";
+    }
+
+
+    if (recordTime) {
+        recordTime.classList.remove("show");
     }
 
 }
@@ -856,11 +1124,11 @@ function stopRecording() {
    FINISH VIDEO
 ========================================================= */
 
-function finishVideoRecording() {
+function finishVideo() {
 
     if (!recordedChunks.length) {
 
-        showSystemMessage(
+        showText(
             "⚠️ No video was recorded.",
             "ai"
         );
@@ -869,223 +1137,22 @@ function finishVideoRecording() {
 
     }
 
-    const mime =
+
+    const mimeType =
         mediaRecorder?.mimeType ||
         "video/webm";
+
 
     const blob =
         new Blob(
             recordedChunks,
-            { type: mime }
+            {
+                type: mimeType
+            }
         );
+
 
     const file =
         new File(
             [blob],
-            "swiftcortex-video-" +
-            Date.now() +
-            ".webm",
-            {
-                type: mime
-            }
-        );
-
-    selectedVideo = file;
-    selectedImage = null;
-
-    showAttachmentPreview(
-        file,
-        "video"
-    );
-
-    closeCamera();
-
-}
-
-
-/* =========================================================
-   ATTACHMENT PREVIEW
-========================================================= */
-
-function showAttachmentPreview(file, type) {
-
-    if (!exists(imagePreview)) return;
-
-    imagePreview.innerHTML = "";
-
-    const wrapper =
-        document.createElement("div");
-
-    wrapper.className = "media-ready";
-
-    if (type === "image") {
-
-        const img =
-            document.createElement("img");
-
-        img.src =
-            URL.createObjectURL(file);
-
-        img.style.maxWidth = "180px";
-        img.style.maxHeight = "140px";
-        img.style.borderRadius = "12px";
-        img.style.objectFit = "cover";
-
-        wrapper.appendChild(img);
-
-        const label =
-            document.createElement("div");
-
-        label.textContent =
-            "🖼 " + file.name;
-
-        wrapper.appendChild(label);
-
-    }
-
-    else if (type === "video") {
-
-        const video =
-            document.createElement("video");
-
-        video.src =
-            URL.createObjectURL(file);
-
-        video.controls = true;
-
-        video.muted = true;
-
-        video.style.maxWidth = "220px";
-        video.style.maxHeight = "140px";
-        video.style.borderRadius = "12px";
-
-        wrapper.appendChild(video);
-
-        const label =
-            document.createElement("div");
-
-        label.textContent =
-            "🎥 " + file.name;
-
-        wrapper.appendChild(label);
-
-    }
-
-    else {
-
-        const label =
-            document.createElement("div");
-
-        label.textContent =
-            "📄 " + file.name;
-
-        wrapper.appendChild(label);
-
-    }
-
-
-    const remove =
-        document.createElement("button");
-
-    remove.type = "button";
-    remove.textContent = "✕ Remove";
-
-    remove.style.marginTop = "8px";
-    remove.style.cursor = "pointer";
-
-    remove.addEventListener("click", function () {
-
-        clearAttachment();
-
-    });
-
-    wrapper.appendChild(remove);
-
-    imagePreview.appendChild(wrapper);
-
-}
-
-
-/* =========================================================
-   CLEAR ATTACHMENT
-========================================================= */
-
-function clearAttachment() {
-
-    selectedImage = null;
-    selectedVideo = null;
-
-    if (exists(imageInput)) {
-        imageInput.value = "";
-    }
-
-    if (exists(fileInput)) {
-        fileInput.value = "";
-    }
-
-    if (exists(imagePreview)) {
-        imagePreview.innerHTML = "";
-    }
-
-}
-
-
-/* =========================================================
-   FILE → BASE64
-========================================================= */
-
-function fileToBase64(file) {
-
-    return new Promise(function (resolve, reject) {
-
-        const reader =
-            new FileReader();
-
-        reader.onload = function () {
-
-            const result = reader.result;
-
-            if (
-                typeof result !== "string"
-            ) {
-
-                reject(
-                    new Error(
-                        "Could not read file."
-                    )
-                );
-
-                return;
-
-            }
-
-            const comma =
-                result.indexOf(",");
-
-            resolve(
-                comma >= 0
-                    ? result.substring(comma + 1)
-                    : result
-            );
-
-        };
-
-        reader.onerror = function () {
-
-            reject(
-                new Error(
-                    "Failed to read file."
-                )
-            );
-
-        };
-
-        reader.readAsDataURL(file);
-
-    });
-
-}
-
-
-/* =========================================================
-   
+            "swiftcortex-vid
