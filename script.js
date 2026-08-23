@@ -2,15 +2,17 @@
 
 /* =========================================================
    SwiftCortex AI Ultra
-   COMPLETE script.js
+   COMPLETE NEW script.js
 
    API:
    /api/gemini
 
-   Features:
-   ✅ Chat
+   FEATURES:
+   ✅ Normal AI chat
+   ✅ Voice input / Microphone
    ✅ Enter to send
    ✅ New Chat
+   ✅ Chat history
    ✅ Plus menu
    ✅ Camera
    ✅ Front / Back camera
@@ -20,20 +22,21 @@
    ✅ Files
    ✅ Image preview
    ✅ Video preview
-   ✅ Plugins
+   ✅ Video first-frame analysis
+   ✅ Plugins modal
    ✅ Think Harder
    ✅ Memory
-   ✅ Theme
    ✅ Settings
+   ✅ Dark / Light / System
    ✅ Language
    ✅ Notifications
    ✅ Privacy
-   ✅ Clear history
+   ✅ Clear History
 ========================================================= */
 
 
 /* =========================================================
-   HELPERS
+   HELPER
 ========================================================= */
 
 const $ = id => document.getElementById(id);
@@ -58,6 +61,8 @@ const newTopChat = $("newTopChat");
 const messages = $("messages");
 const userInput = $("userInput");
 const sendBtn = $("sendBtn");
+
+const micBtn = $("micBtn");
 
 const imageInput = $("imageInput");
 const fileInput = $("fileInput");
@@ -125,9 +130,16 @@ let recordingSeconds = 0;
 let recordingTimer = null;
 
 let thinkHarder = false;
+
 let sending = false;
 
 let currentChat = [];
+
+let speechRecognition = null;
+let isListening = false;
+
+let currentTheme =
+    localStorage.getItem("swift_theme") || "dark";
 
 let memoryEnabled =
     localStorage.getItem("swift_memory") !== "off";
@@ -142,7 +154,9 @@ function getHistory() {
     try {
 
         return JSON.parse(
-            localStorage.getItem("swift_history") || "[]"
+            localStorage.getItem(
+                "swift_history"
+            ) || "[]"
         );
 
     } catch {
@@ -157,7 +171,9 @@ function getHistory() {
 function saveHistory(history) {
 
     if (
-        localStorage.getItem("swift_save_history") === "off"
+        localStorage.getItem(
+            "swift_save_history"
+        ) === "off"
     ) {
         return;
     }
@@ -170,21 +186,28 @@ function saveHistory(history) {
 }
 
 
-function saveCurrentMessage(text, type) {
+function saveCurrentMessage(
+    text,
+    type
+) {
 
     if (
-        localStorage.getItem("swift_save_history") === "off"
+        localStorage.getItem(
+            "swift_save_history"
+        ) === "off"
     ) {
         return;
     }
 
     currentChat.push({
 
-        text: text || "",
+        text:
+            text || "",
 
         type,
 
-        time: Date.now()
+        time:
+            Date.now()
 
     });
 
@@ -197,36 +220,185 @@ function saveCurrentChat() {
         return;
     }
 
+
     if (
-        localStorage.getItem("swift_save_history") === "off"
+        localStorage.getItem(
+            "swift_save_history"
+        ) === "off"
     ) {
         return;
     }
 
-    const history = getHistory();
 
-    const firstUser =
+    const history =
+        getHistory();
+
+
+    const firstUserMessage =
         currentChat.find(
-            item => item.type === "user"
+            message =>
+                message.type === "user"
         );
 
+
     const title =
-        firstUser?.text?.slice(0, 40) ||
+        firstUserMessage?.text
+            ?.slice(0, 40) ||
         "New Chat";
+
 
     history.unshift({
 
-        id: Date.now(),
+        id:
+            Date.now(),
 
         title,
 
-        messages: currentChat
+        messages:
+            currentChat
 
     });
+
 
     saveHistory(
         history.slice(0, 50)
     );
+
+    renderHistory();
+
+}
+
+
+/* =========================================================
+   HISTORY UI
+========================================================= */
+
+function renderHistory() {
+
+    if (!historyList) {
+        return;
+    }
+
+
+    const history =
+        getHistory();
+
+
+    historyList.innerHTML = "";
+
+
+    if (!history.length) {
+
+        const empty =
+            document.createElement(
+                "div"
+            );
+
+        empty.className =
+            "history-empty";
+
+        empty.textContent =
+            "No recent chats";
+
+        historyList.appendChild(
+            empty
+        );
+
+        return;
+
+    }
+
+
+    history.forEach(
+        chat => {
+
+            const button =
+                document.createElement(
+                    "button"
+                );
+
+            button.className =
+                "history-item";
+
+            button.textContent =
+                chat.title ||
+                "New Chat";
+
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    loadHistoryChat(
+                        chat.id
+                    );
+
+                }
+            );
+
+
+            historyList.appendChild(
+                button
+            );
+
+        }
+    );
+
+}
+
+
+function loadHistoryChat(id) {
+
+    const history =
+        getHistory();
+
+
+    const chat =
+        history.find(
+            item =>
+                item.id === id
+        );
+
+
+    if (!chat) {
+        return;
+    }
+
+
+    currentChat =
+        Array.isArray(chat.messages)
+            ? [...chat.messages]
+            : [];
+
+
+    if (!messages) {
+        return;
+    }
+
+
+    messages.innerHTML = "";
+
+
+    currentChat.forEach(
+        message => {
+
+            addMessage(
+                message.text,
+                message.type,
+                null,
+                false
+            );
+
+        }
+    );
+
+
+    sidebar?.classList.remove(
+        "open"
+    );
+
+
+    userInput?.focus();
 
 }
 
@@ -241,12 +413,15 @@ function scrollChat() {
         return;
     }
 
-    requestAnimationFrame(() => {
 
-        messages.scrollTop =
-            messages.scrollHeight;
+    requestAnimationFrame(
+        () => {
 
-    });
+            messages.scrollTop =
+                messages.scrollHeight;
+
+        }
+    );
 
 }
 
@@ -258,7 +433,10 @@ function scrollChat() {
 function removeWelcome() {
 
     const welcome =
-        messages?.querySelector(".welcome");
+        messages?.querySelector(
+            ".welcome"
+        );
+
 
     welcome?.remove();
 
@@ -270,6 +448,7 @@ function showWelcome() {
     if (!messages) {
         return;
     }
+
 
     messages.innerHTML = `
 
@@ -290,19 +469,27 @@ function showWelcome() {
 
             <div class="quick-actions">
 
-                <button data-prompt="Tell me about yourself">
-                    🤖 About AI
+                <button
+                    data-prompt="Tell me today's latest news"
+                >
+                    📰 Latest News
                 </button>
 
-                <button data-prompt="Help me write something">
+                <button
+                    data-prompt="Help me write something"
+                >
                     ✍️ Write
                 </button>
 
-                <button data-prompt="Explain something to me">
+                <button
+                    data-prompt="Explain something to me"
+                >
                     💡 Explain
                 </button>
 
-                <button data-prompt="Help me with coding">
+                <button
+                    data-prompt="Help me with coding"
+                >
                     💻 Coding
                 </button>
 
@@ -330,10 +517,15 @@ function addMessage(
         return null;
     }
 
+
     removeWelcome();
 
+
     const box =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
+
 
     box.className =
         type === "user"
@@ -344,13 +536,18 @@ function addMessage(
     if (text) {
 
         const textBox =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
+
 
         textBox.className =
             "message-text";
 
+
         textBox.textContent =
             text;
+
 
         box.appendChild(
             textBox
@@ -360,20 +557,27 @@ function addMessage(
 
 
     if (
-        attachment?.type === "image"
+        attachment &&
+        attachment.type === "image"
     ) {
 
         const img =
-            document.createElement("img");
+            document.createElement(
+                "img"
+            );
+
 
         img.src =
             attachment.url;
 
+
         img.alt =
             "Uploaded image";
 
+
         img.loading =
             "lazy";
+
 
         box.appendChild(
             img
@@ -383,23 +587,31 @@ function addMessage(
 
 
     if (
-        attachment?.type === "video"
+        attachment &&
+        attachment.type === "video"
     ) {
 
         const video =
-            document.createElement("video");
+            document.createElement(
+                "video"
+            );
+
 
         video.src =
             attachment.url;
 
+
         video.controls =
             true;
+
 
         video.playsInline =
             true;
 
+
         video.preload =
             "metadata";
+
 
         box.appendChild(
             video
@@ -409,17 +621,24 @@ function addMessage(
 
 
     if (
-        attachment?.type === "file"
+        attachment &&
+        attachment.type === "file"
     ) {
 
         const fileBox =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
+
 
         fileBox.className =
             "message-file";
 
+
         fileBox.textContent =
-            "📄 " + attachment.name;
+            "📄 " +
+            attachment.name;
+
 
         box.appendChild(
             fileBox
@@ -432,6 +651,7 @@ function addMessage(
         box
     );
 
+
     scrollChat();
 
 
@@ -443,6 +663,7 @@ function addMessage(
         );
 
     }
+
 
     return box;
 
@@ -457,36 +678,44 @@ function showTyping() {
 
     removeTyping();
 
-    if (!messages) {
-        return;
-    }
 
     const box =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
+
 
     box.id =
         "swiftTyping";
+
 
     box.className =
         "ai-message";
 
 
     const text =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
+
 
     text.className =
         "message-text";
 
+
     text.textContent =
         "SwiftCortex is thinking…";
+
 
     box.appendChild(
         text
     );
 
-    messages.appendChild(
+
+    messages?.appendChild(
         box
     );
+
 
     scrollChat();
 
@@ -498,34 +727,6 @@ function removeTyping() {
     $("swiftTyping")?.remove();
 
 }
-
-
-/* =========================================================
-   INPUT RESIZE
-========================================================= */
-
-function resizeInput() {
-
-    if (!userInput) {
-        return;
-    }
-
-    userInput.style.height =
-        "auto";
-
-    userInput.style.height =
-        Math.min(
-            userInput.scrollHeight,
-            180
-        ) + "px";
-
-}
-
-
-userInput?.addEventListener(
-    "input",
-    resizeInput
-);
 
 
 /* =========================================================
@@ -541,30 +742,37 @@ function showAttachment(
         return;
     }
 
+
     imagePreview.innerHTML = "";
 
 
     const box =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
+
 
     box.className =
         "attachment-box";
 
 
-    const url =
-        URL.createObjectURL(file);
-
-
     if (type === "image") {
 
         const img =
-            document.createElement("img");
+            document.createElement(
+                "img"
+            );
+
 
         img.src =
-            url;
+            URL.createObjectURL(
+                file
+            );
+
 
         img.alt =
             file.name;
+
 
         box.appendChild(
             img
@@ -576,19 +784,28 @@ function showAttachment(
     if (type === "video") {
 
         const video =
-            document.createElement("video");
+            document.createElement(
+                "video"
+            );
+
 
         video.src =
-            url;
+            URL.createObjectURL(
+                file
+            );
+
 
         video.controls =
             true;
 
+
         video.muted =
             true;
 
+
         video.playsInline =
             true;
+
 
         box.appendChild(
             video
@@ -598,18 +815,34 @@ function showAttachment(
 
 
     const name =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
+
 
     name.className =
         "attachment-name";
 
 
-    name.textContent =
-        type === "image"
-            ? "🖼️ " + file.name
-            : type === "video"
-                ? "🎥 " + file.name
-                : "📄 " + file.name;
+    if (type === "image") {
+
+        name.textContent =
+            "🖼️ " +
+            file.name;
+
+    } else if (type === "video") {
+
+        name.textContent =
+            "🎥 " +
+            file.name;
+
+    } else {
+
+        name.textContent =
+            "📄 " +
+            file.name;
+
+    }
 
 
     box.appendChild(
@@ -618,24 +851,33 @@ function showAttachment(
 
 
     const remove =
-        document.createElement("button");
+        document.createElement(
+            "button"
+        );
 
-    remove.type =
-        "button";
 
     remove.className =
         "attachment-remove";
 
+
+    remove.type =
+        "button";
+
+
     remove.textContent =
         "✕";
 
-    remove.onclick =
-        clearAttachment;
+
+    remove.addEventListener(
+        "click",
+        clearAttachment
+    );
 
 
     box.appendChild(
         remove
     );
+
 
     imagePreview.appendChild(
         box
@@ -647,7 +889,9 @@ function showAttachment(
 function clearAttachment() {
 
     selectedImage = null;
+
     selectedVideo = null;
+
     selectedFile = null;
 
 
@@ -655,9 +899,11 @@ function clearAttachment() {
         imageInput.value = "";
     }
 
+
     if (fileInput) {
         fileInput.value = "";
     }
+
 
     if (imagePreview) {
         imagePreview.innerHTML = "";
@@ -675,6 +921,7 @@ plusBtn?.addEventListener(
     event => {
 
         event.stopPropagation();
+
 
         plusMenu?.classList.toggle(
             "show"
@@ -700,7 +947,9 @@ document.addEventListener(
 
         if (
             plusMenu &&
-            !plusMenu.contains(event.target) &&
+            !plusMenu.contains(
+                event.target
+            ) &&
             event.target !== plusBtn
         ) {
 
@@ -724,7 +973,7 @@ function closePlus() {
 
 
 /* =========================================================
-   SIDEBAR
+   MOBILE SIDEBAR
 ========================================================= */
 
 menuBtn?.addEventListener(
@@ -733,9 +982,35 @@ menuBtn?.addEventListener(
 
         event.stopPropagation();
 
+
         sidebar?.classList.toggle(
             "open"
         );
+
+    }
+);
+
+
+document.addEventListener(
+    "click",
+    event => {
+
+        if (
+            window.innerWidth <= 800 &&
+            sidebar?.classList.contains(
+                "open"
+            ) &&
+            !sidebar.contains(
+                event.target
+            ) &&
+            event.target !== menuBtn
+        ) {
+
+            sidebar.classList.remove(
+                "open"
+            );
+
+        }
 
     }
 );
@@ -753,13 +1028,18 @@ function startNewChat() {
 
     }
 
+
     currentChat = [];
+
 
     clearAttachment();
 
+
     removeTyping();
 
+
     showWelcome();
+
 
     userInput?.focus();
 
@@ -773,6 +1053,7 @@ newChat?.addEventListener(
         sidebar?.classList.remove(
             "open"
         );
+
 
         startNewChat();
 
@@ -799,16 +1080,24 @@ document.addEventListener(
                 "[data-prompt]"
             );
 
+
         if (!button) {
             return;
         }
 
+
+        const prompt =
+            button.dataset.prompt;
+
+
         if (userInput) {
 
             userInput.value =
-                button.dataset.prompt;
+                prompt;
+
 
             resizeInput();
+
 
             userInput.focus();
 
@@ -828,7 +1117,16 @@ photoBtn?.addEventListener(
 
         closePlus();
 
-        imageInput?.click();
+
+        if (!imageInput) {
+            return;
+        }
+
+
+        imageInput.value = "";
+
+
+        imageInput.click();
 
     }
 );
@@ -841,30 +1139,39 @@ imageInput?.addEventListener(
         const file =
             imageInput.files?.[0];
 
+
         if (!file) {
             return;
         }
 
+
         if (
-            !file.type.startsWith("image/")
+            !file.type.startsWith(
+                "image/"
+            )
         ) {
 
             alert(
                 "Please select an image."
             );
 
+
             return;
 
         }
 
+
         selectedImage =
             file;
+
 
         selectedVideo =
             null;
 
+
         selectedFile =
             null;
+
 
         showAttachment(
             file,
@@ -885,7 +1192,16 @@ fileBtn?.addEventListener(
 
         closePlus();
 
-        fileInput?.click();
+
+        if (!fileInput) {
+            return;
+        }
+
+
+        fileInput.value = "";
+
+
+        fileInput.click();
 
     }
 );
@@ -898,13 +1214,16 @@ fileInput?.addEventListener(
         const file =
             fileInput.files?.[0];
 
+
         if (!file) {
             return;
         }
 
 
         if (
-            file.type.startsWith("image/")
+            file.type.startsWith(
+                "image/"
+            )
         ) {
 
             selectedImage =
@@ -916,10 +1235,12 @@ fileInput?.addEventListener(
             selectedFile =
                 null;
 
+
             showAttachment(
                 file,
                 "image"
             );
+
 
             return;
 
@@ -927,7 +1248,9 @@ fileInput?.addEventListener(
 
 
         if (
-            file.type.startsWith("video/")
+            file.type.startsWith(
+                "video/"
+            )
         ) {
 
             selectedVideo =
@@ -939,10 +1262,12 @@ fileInput?.addEventListener(
             selectedFile =
                 null;
 
+
             showAttachment(
                 file,
                 "video"
             );
+
 
             return;
 
@@ -952,11 +1277,14 @@ fileInput?.addEventListener(
         selectedFile =
             file;
 
+
         selectedImage =
             null;
 
+
         selectedVideo =
             null;
+
 
         showAttachment(
             file,
@@ -977,11 +1305,14 @@ cameraBtn?.addEventListener(
 
         closePlus();
 
+
         cameraModal?.classList.add(
             "show"
         );
 
+
         setPhotoMode();
+
 
         await startCamera();
 
@@ -999,6 +1330,7 @@ async function startCamera() {
 
     stopCamera();
 
+
     if (
         !navigator.mediaDevices ||
         !navigator.mediaDevices.getUserMedia
@@ -1007,6 +1339,7 @@ async function startCamera() {
         showCameraError(
             "Camera is not supported by this browser."
         );
+
 
         return;
 
@@ -1043,19 +1376,20 @@ async function startCamera() {
             cameraVideo.srcObject =
                 cameraStream;
 
+
             cameraVideo.muted =
                 true;
 
-            cameraVideo.playsInline =
-                true;
 
             await cameraVideo.play();
 
         }
 
+
         cameraError?.classList.remove(
             "show"
         );
+
 
     } catch (error) {
 
@@ -1064,8 +1398,11 @@ async function startCamera() {
             error
         );
 
+
         showCameraError(
-            cameraErrorMessage(error)
+            cameraErrorMessage(
+                error
+            )
         );
 
     }
@@ -1073,11 +1410,14 @@ async function startCamera() {
 }
 
 
-function showCameraError(message) {
+function showCameraError(
+    message
+) {
 
     cameraError?.classList.add(
         "show"
     );
+
 
     if (cameraErrorText) {
 
@@ -1089,29 +1429,38 @@ function showCameraError(message) {
 }
 
 
-function cameraErrorMessage(error) {
+function cameraErrorMessage(
+    error
+) {
 
     if (
-        error?.name === "NotAllowedError"
+        error?.name ===
+        "NotAllowedError"
     ) {
 
         return (
             "Camera permission was denied. " +
-            "Please allow camera access."
+            "Allow camera access in your browser settings."
         );
 
     }
 
+
     if (
-        error?.name === "NotFoundError"
+        error?.name ===
+        "NotFoundError"
     ) {
 
-        return "No camera was found.";
+        return (
+            "No camera was found on this device."
+        );
 
     }
 
+
     if (
-        error?.name === "NotReadableError"
+        error?.name ===
+        "NotReadableError"
     ) {
 
         return (
@@ -1120,8 +1469,21 @@ function cameraErrorMessage(error) {
 
     }
 
+
+    if (
+        error?.name ===
+        "SecurityError"
+    ) {
+
+        return (
+            "Camera access is blocked by browser security."
+        );
+
+    }
+
+
     return (
-        "Unable to access the camera."
+        "Camera permission or device error."
     );
 
 }
@@ -1134,13 +1496,16 @@ function stopCamera() {
         cameraStream
             .getTracks()
             .forEach(
-                track => track.stop()
+                track =>
+                    track.stop()
             );
+
 
         cameraStream =
             null;
 
     }
+
 
     if (cameraVideo) {
 
@@ -1156,7 +1521,9 @@ function closeCamera() {
 
     stopRecording();
 
+
     stopCamera();
+
 
     cameraModal?.classList.remove(
         "show"
@@ -1175,17 +1542,20 @@ switchCamera?.addEventListener(
 
         if (
             recorder &&
-            recorder.state !== "inactive"
+            recorder.state !==
+                "inactive"
         ) {
 
             return;
 
         }
 
+
         cameraFacing =
             cameraFacing === "user"
                 ? "environment"
                 : "user";
+
 
         await startCamera();
 
@@ -1203,6 +1573,7 @@ photoMode?.addEventListener(
 
         setPhotoMode();
 
+
         await startCamera();
 
     }
@@ -1214,6 +1585,7 @@ function setPhotoMode() {
     photoMode?.classList.add(
         "active"
     );
+
 
     videoMode?.classList.remove(
         "active"
@@ -1227,12 +1599,14 @@ function setPhotoMode() {
 
     }
 
+
     if (startRecord) {
 
         startRecord.style.display =
             "none";
 
     }
+
 
     if (stopRecord) {
 
@@ -1242,50 +1616,6 @@ function setPhotoMode() {
     }
 
 }
-
-
-/* =========================================================
-   VIDEO MODE
-========================================================= */
-
-videoMode?.addEventListener(
-    "click",
-    async () => {
-
-        videoMode.classList.add(
-            "active"
-        );
-
-        photoMode?.classList.remove(
-            "active"
-        );
-
-
-        if (takePhoto) {
-
-            takePhoto.style.display =
-                "none";
-
-        }
-
-        if (startRecord) {
-
-            startRecord.style.display =
-                "inline-block";
-
-        }
-
-        if (stopRecord) {
-
-            stopRecord.style.display =
-                "none";
-
-        }
-
-        await startCamera();
-
-    }
-);
 
 
 /* =========================================================
@@ -1311,18 +1641,24 @@ takePhoto?.addEventListener(
                 "canvas"
             );
 
+
         canvas.width =
-            cameraVideo.videoWidth || 1280;
+            cameraVideo.videoWidth ||
+            1280;
+
 
         canvas.height =
-            cameraVideo.videoHeight || 720;
+            cameraVideo.videoHeight ||
+            720;
 
 
-        const ctx =
-            canvas.getContext("2d");
+        const context =
+            canvas.getContext(
+                "2d"
+            );
 
 
-        ctx.drawImage(
+        context.drawImage(
             cameraVideo,
             0,
             0,
@@ -1338,34 +1674,41 @@ takePhoto?.addEventListener(
                     return;
                 }
 
+
                 const file =
                     new File(
                         [blob],
-                        "camera-photo.jpg",
+                        `swift-photo-${Date.now()}.jpg`,
                         {
-                            type: "image/jpeg"
+                            type:
+                                "image/jpeg"
                         }
                     );
+
 
                 selectedImage =
                     file;
 
+
                 selectedVideo =
                     null;
 
+
                 selectedFile =
                     null;
+
 
                 showAttachment(
                     file,
                     "image"
                 );
 
+
                 closeCamera();
 
             },
             "image/jpeg",
-            0.92
+            0.9
         );
 
     }
@@ -1373,7 +1716,62 @@ takePhoto?.addEventListener(
 
 
 /* =========================================================
-   VIDEO RECORDING
+   VIDEO MODE
+========================================================= */
+
+videoMode?.addEventListener(
+    "click",
+    async () => {
+
+        setVideoMode();
+
+
+        await startCamera();
+
+    }
+);
+
+
+function setVideoMode() {
+
+    videoMode?.classList.add(
+        "active"
+    );
+
+
+    photoMode?.classList.remove(
+        "active"
+    );
+
+
+    if (takePhoto) {
+
+        takePhoto.style.display =
+            "none";
+
+    }
+
+
+    if (startRecord) {
+
+        startRecord.style.display =
+            "inline-block";
+
+    }
+
+
+    if (stopRecord) {
+
+        stopRecord.style.display =
+            "none";
+
+    }
+
+}
+
+
+/* =========================================================
+   START RECORDING
 ========================================================= */
 
 startRecord?.addEventListener(
@@ -1382,15 +1780,11 @@ startRecord?.addEventListener(
 );
 
 
-stopRecord?.addEventListener(
-    "click",
-    stopRecording
-);
-
-
 function startRecording() {
 
-    if (!cameraStream) {
+    if (
+        !cameraStream
+    ) {
 
         return;
 
@@ -1405,6 +1799,7 @@ function startRecording() {
             "Video recording is not supported by this browser."
         );
 
+
         return;
 
     }
@@ -1413,8 +1808,14 @@ function startRecording() {
     chunks = [];
 
 
-    let mimeType =
-        "video/webm";
+    recordingSeconds =
+        0;
+
+
+    updateRecordTime();
+
+
+    let options = {};
 
 
     if (
@@ -1423,19 +1824,17 @@ function startRecording() {
         )
     ) {
 
-        mimeType =
+        options.mimeType =
             "video/webm;codecs=vp9,opus";
 
-    }
-
-    else if (
+    } else if (
         MediaRecorder.isTypeSupported(
-            "video/webm;codecs=vp8,opus"
+            "video/webm"
         )
     ) {
 
-        mimeType =
-            "video/webm;codecs=vp8,opus";
+        options.mimeType =
+            "video/webm";
 
     }
 
@@ -1445,17 +1844,23 @@ function startRecording() {
         recorder =
             new MediaRecorder(
                 cameraStream,
-                {
-                    mimeType
-                }
+                options
             );
 
-    } catch {
+    } catch (error) {
 
-        recorder =
-            new MediaRecorder(
-                cameraStream
-            );
+        console.error(
+            "MediaRecorder error:",
+            error
+        );
+
+
+        alert(
+            "Unable to start video recording."
+        );
+
+
+        return;
 
     }
 
@@ -1463,7 +1868,10 @@ function startRecording() {
     recorder.ondataavailable =
         event => {
 
-            if (event.data.size > 0) {
+            if (
+                event.data &&
+                event.data.size > 0
+            ) {
 
                 chunks.push(
                     event.data
@@ -1478,13 +1886,25 @@ function startRecording() {
         saveRecordedVideo;
 
 
-    recorder.start();
+    recorder.start(
+        250
+    );
 
 
-    recordingSeconds =
-        0;
+    if (startRecord) {
 
-    updateRecordTime();
+        startRecord.style.display =
+            "none";
+
+    }
+
+
+    if (stopRecord) {
+
+        stopRecord.style.display =
+            "inline-block";
+
+    }
 
 
     recordingTimer =
@@ -1499,29 +1919,25 @@ function startRecording() {
             1000
         );
 
-
-    if (startRecord) {
-
-        startRecord.style.display =
-            "none";
-
-    }
-
-    if (stopRecord) {
-
-        stopRecord.style.display =
-            "inline-block";
-
-    }
-
 }
+
+
+/* =========================================================
+   STOP RECORDING
+========================================================= */
+
+stopRecord?.addEventListener(
+    "click",
+    stopRecording
+);
 
 
 function stopRecording() {
 
     if (
         recorder &&
-        recorder.state !== "inactive"
+        recorder.state !==
+            "inactive"
     ) {
 
         recorder.stop();
@@ -1535,23 +1951,9 @@ function stopRecording() {
             recordingTimer
         );
 
+
         recordingTimer =
             null;
-
-    }
-
-
-    if (startRecord) {
-
-        startRecord.style.display =
-            "inline-block";
-
-    }
-
-    if (stopRecord) {
-
-        stopRecord.style.display =
-            "none";
 
     }
 
@@ -1564,30 +1966,44 @@ function updateRecordTime() {
         return;
     }
 
+
     const minutes =
         Math.floor(
             recordingSeconds / 60
         );
+
 
     const seconds =
         recordingSeconds % 60;
 
 
     recordTime.textContent =
-        `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+        `🔴 ${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 
 }
 
 
+/* =========================================================
+   SAVE RECORDED VIDEO
+========================================================= */
+
 function saveRecordedVideo() {
+
+    if (!chunks.length) {
+        return;
+    }
+
+
+    const mime =
+        recorder?.mimeType ||
+        "video/webm";
+
 
     const blob =
         new Blob(
             chunks,
             {
-                type:
-                    recorder?.mimeType ||
-                    "video/webm"
+                type: mime
             }
         );
 
@@ -1595,10 +2011,9 @@ function saveRecordedVideo() {
     const file =
         new File(
             [blob],
-            "camera-video.webm",
+            `swift-video-${Date.now()}.webm`,
             {
-                type:
-                    blob.type
+                type: mime
             }
         );
 
@@ -1606,8 +2021,10 @@ function saveRecordedVideo() {
     selectedVideo =
         file;
 
+
     selectedImage =
         null;
+
 
     selectedFile =
         null;
@@ -1619,9 +2036,1064 @@ function saveRecordedVideo() {
     );
 
 
+    recorder =
+        null;
+
+
     chunks = [];
 
-    closeCamera();
+
+    if (startRecord) {
+
+        startRecord.style.display =
+            "inline-block";
+
+    }
+
+
+    if (stopRecord) {
+
+        stopRecord.style.display =
+            "none";
+
+    }
+
+}
+
+
+/* =========================================================
+   RESIZE TEXTAREA
+========================================================= */
+
+function resizeInput() {
+
+    if (!userInput) {
+        return;
+    }
+
+
+    userInput.style.height =
+        "auto";
+
+
+    userInput.style.height =
+        Math.min(
+            userInput.scrollHeight,
+            160
+        ) + "px";
+
+}
+
+
+userInput?.addEventListener(
+    "input",
+    resizeInput
+);
+
+
+/* =========================================================
+   VOICE INPUT
+========================================================= */
+
+function setupVoiceInput() {
+
+    if (!micBtn || !userInput) {
+        return;
+    }
+
+
+    const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+
+    if (!SpeechRecognition) {
+
+        micBtn.addEventListener(
+            "click",
+            () => {
+
+                alert(
+                    "Voice input is not supported by this browser. Try Chrome on Android."
+                );
+
+            }
+        );
+
+
+        return;
+
+    }
+
+
+    speechRecognition =
+        new SpeechRecognition();
+
+
+    speechRecognition.continuous =
+        false;
+
+
+    speechRecognition.interimResults =
+        true;
+
+
+    speechRecognition.lang =
+        navigator.language ||
+        "en-US";
+
+
+    speechRecognition.onstart =
+        () => {
+
+            isListening =
+                true;
+
+
+            micBtn.classList.add(
+                "recording"
+            );
+
+
+            micBtn.textContent =
+                "🔴";
+
+
+            userInput?.focus();
+
+        };
+
+
+    speechRecognition.onresult =
+        event => {
+
+            let finalText =
+                "";
+
+
+            for (
+                let i = event.resultIndex;
+                i < event.results.length;
+                i++
+            ) {
+
+                const result =
+                    event.results[i];
+
+
+                const transcript =
+                    result[0]
+                        ?.transcript || "";
+
+
+                if (
+                    result.isFinal
+                ) {
+
+                    finalText +=
+                        transcript;
+
+                }
+
+            }
+
+
+            if (finalText) {
+
+                const existing =
+                    userInput.value.trim();
+
+
+                userInput.value =
+                    existing
+                        ? existing +
+                          " " +
+                          finalText
+                        : finalText;
+
+
+                resizeInput();
+
+            }
+
+        };
+
+
+    speechRecognition.onerror =
+        event => {
+
+            console.error(
+                "Speech recognition:",
+                event.error
+            );
+
+
+            if (
+                event.error ===
+                "not-allowed"
+            ) {
+
+                alert(
+                    "Microphone permission was denied. Please allow microphone access."
+                );
+
+            }
+
+
+            if (
+                event.error ===
+                "no-speech"
+            ) {
+
+                console.log(
+                    "No speech detected."
+                );
+
+            }
+
+        };
+
+
+    speechRecognition.onend =
+        () => {
+
+            isListening =
+                false;
+
+
+            micBtn.classList.remove(
+                "recording"
+            );
+
+
+            micBtn.textContent =
+                "🎤";
+
+        };
+
+
+    micBtn.addEventListener(
+        "click",
+        () => {
+
+            if (isListening) {
+
+                speechRecognition.stop();
+
+                return;
+
+            }
+
+
+            speechRecognition.lang =
+                navigator.language ||
+                "en-US";
+
+
+            try {
+
+                speechRecognition.start();
+
+            } catch (error) {
+
+                console.error(
+                    "Voice start error:",
+                    error
+                );
+
+            }
+
+        }
+    );
+
+}
+
+
+setupVoiceInput();
+
+
+/* =========================================================
+   FILE TO BASE64
+========================================================= */
+
+function fileToBase64(
+    file
+) {
+
+    return new Promise(
+        (
+            resolve,
+            reject
+        ) => {
+
+            const reader =
+                new FileReader();
+
+
+            reader.onload =
+                () => {
+
+                    const result =
+                        reader.result;
+
+
+                    if (
+                        typeof result !==
+                        "string"
+                    ) {
+
+                        reject(
+                            new Error(
+                                "Unable to read file."
+                            )
+                        );
+
+
+                        return;
+
+                    }
+
+
+                    const commaIndex =
+                        result.indexOf(",");
+
+
+                    resolve(
+                        commaIndex >= 0
+                            ? result.slice(
+                                commaIndex + 1
+                            )
+                            : result
+                    );
+
+                };
+
+
+            reader.onerror =
+                () => {
+
+                    reject(
+                        new Error(
+                            "Unable to read file."
+                        )
+                    );
+
+                };
+
+
+            reader.readAsDataURL(
+                file
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   VIDEO -> FIRST FRAME
+   Used because current API accepts image input.
+========================================================= */
+
+function videoToImage(
+    videoFile
+) {
+
+    return new Promise(
+        (
+            resolve,
+            reject
+        ) => {
+
+            const video =
+                document.createElement(
+                    "video"
+                );
+
+
+            const url =
+                URL.createObjectURL(
+                    videoFile
+                );
+
+
+            video.src =
+                url;
+
+
+            video.muted =
+                true;
+
+
+            video.playsInline =
+                true;
+
+
+            video.preload =
+                "metadata";
+
+
+            video.onloadedmetadata =
+                () => {
+
+                    const duration =
+                        video.duration || 0;
+
+
+                    const time =
+                        Math.min(
+                            Math.max(
+                                duration * 0.2,
+                                0
+                            ),
+                            Math.max(
+                                duration - 0.1,
+                                0
+                            )
+                        );
+
+
+                    video.currentTime =
+                        time;
+
+                };
+
+
+            video.onseeked =
+                () => {
+
+                    const canvas =
+                        document.createElement(
+                            "canvas"
+                        );
+
+
+                    canvas.width =
+                        video.videoWidth ||
+                        640;
+
+
+                    canvas.height =
+                        video.videoHeight ||
+                        360;
+
+
+                    const context =
+                        canvas.getContext(
+                            "2d"
+                        );
+
+
+                    context.drawImage(
+                        video,
+                        0,
+                        0,
+                        canvas.width,
+                        canvas.height
+                    );
+
+
+                    canvas.toBlob(
+                        blob => {
+
+                            URL.revokeObjectURL(
+                                url
+                            );
+
+
+                            if (!blob) {
+
+                                reject(
+                                    new Error(
+                                        "Could not extract video frame."
+                                    )
+                                );
+
+
+                                return;
+
+                            }
+
+
+                            resolve(
+                                new File(
+                                    [
+                                        blob
+                                    ],
+                                    "video-frame.jpg",
+                                    {
+                                        type:
+                                            "image/jpeg"
+                                    }
+                                )
+                            );
+
+                        },
+                        "image/jpeg",
+                        0.85
+                    );
+
+                };
+
+
+            video.onerror =
+                () => {
+
+                    URL.revokeObjectURL(
+                        url
+                    );
+
+
+                    reject(
+                        new Error(
+                            "Could not read the video."
+                        )
+                    );
+
+                };
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   SEND TO API
+========================================================= */
+
+async function sendMessage() {
+
+    if (sending) {
+        return;
+    }
+
+
+    const text =
+        userInput?.value.trim() ||
+        "";
+
+
+    if (
+        !text &&
+        !selectedImage &&
+        !selectedVideo &&
+        !selectedFile
+    ) {
+
+        return;
+
+    }
+
+
+    sending =
+        true;
+
+
+    setSendingState(
+        true
+    );
+
+
+    closePlus();
+
+
+    removeWelcome();
+
+
+    let attachment =
+        null;
+
+
+    let apiImage =
+        null;
+
+
+    try {
+
+        /* ===================================================
+           IMAGE
+        =================================================== */
+
+        if (selectedImage) {
+
+            attachment = {
+
+                type:
+                    "image",
+
+                url:
+                    URL.createObjectURL(
+                        selectedImage
+                    )
+
+            };
+
+
+            const base64 =
+                await fileToBase64(
+                    selectedImage
+                );
+
+
+            apiImage = {
+
+                data:
+                    base64,
+
+                mimeType:
+                    selectedImage.type ||
+                    "image/jpeg"
+
+            };
+
+        }
+
+
+        /* ===================================================
+           VIDEO
+        =================================================== */
+
+        else if (selectedVideo) {
+
+            attachment = {
+
+                type:
+                    "video",
+
+                url:
+                    URL.createObjectURL(
+                        selectedVideo
+                    )
+
+            };
+
+
+            /*
+             * The current Vercel API accepts images.
+             * Extract a frame from the video and send
+             * that frame for AI analysis.
+             */
+
+            const frame =
+                await videoToImage(
+                    selectedVideo
+                );
+
+
+            const base64 =
+                await fileToBase64(
+                    frame
+                );
+
+
+            apiImage = {
+
+                data:
+                    base64,
+
+                mimeType:
+                    "image/jpeg"
+
+            };
+
+        }
+
+
+        /* ===================================================
+           FILE
+        =================================================== */
+
+        else if (selectedFile) {
+
+            attachment = {
+
+                type:
+                    "file",
+
+                name:
+                    selectedFile.name
+
+            };
+
+        }
+
+
+        /* ===================================================
+           SHOW USER MESSAGE
+        =================================================== */
+
+        addMessage(
+            text ||
+                (
+                    selectedVideo
+                        ? "Please analyze this video."
+                        : selectedImage
+                            ? "Please analyze this image."
+                            : ""
+                ),
+            "user",
+            attachment,
+            true
+        );
+
+
+        userInput.value =
+            "";
+
+
+        resizeInput();
+
+
+        showTyping();
+
+
+        /* ===================================================
+           REQUEST BODY
+        =================================================== */
+
+        const requestBody = {
+
+            message:
+                text,
+
+            thinkHarder:
+                thinkHarder
+
+        };
+
+
+        if (apiImage) {
+
+            requestBody.image =
+                apiImage;
+
+        }
+
+
+        /* ===================================================
+           API REQUEST
+        =================================================== */
+
+        const response =
+            await fetch(
+                "/api/gemini",
+                {
+
+                    method:
+                        "POST",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/json"
+
+                    },
+
+                    body:
+                        JSON.stringify(
+                            requestBody
+                        )
+
+                }
+            );
+
+
+        let data =
+            null;
+
+
+        try {
+
+            data =
+                await response.json();
+
+        } catch {
+
+            data =
+                null;
+
+        }
+
+
+        removeTyping();
+
+
+        /* ===================================================
+           RATE LIMIT
+        =================================================== */
+
+        if (
+            response.status === 429
+        ) {
+
+            addMessage(
+                "⏳ The AI is temporarily rate-limited. Please wait a few seconds and try again.",
+                "ai"
+            );
+
+
+            return;
+
+        }
+
+
+        /* ===================================================
+           API ERROR
+        =================================================== */
+
+        if (
+            !response.ok ||
+            !data?.success
+        ) {
+
+            const errorMessage =
+                data?.error ||
+                `API request failed (${response.status}).`;
+
+
+            addMessage(
+                "⚠️ " +
+                errorMessage,
+                "ai"
+            );
+
+
+            return;
+
+        }
+
+
+        /* ===================================================
+           AI ANSWER
+        =================================================== */
+
+        const answer =
+            (
+                data.answer ||
+                data.reply ||
+                data.text ||
+                ""
+            ).trim();
+
+
+        if (!answer) {
+
+            addMessage(
+                "⚠️ The AI returned an empty response. Please try again.",
+                "ai"
+            );
+
+
+            return;
+
+        }
+
+
+        addMessage(
+            answer,
+            "ai",
+            null,
+            true
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "SEND ERROR:",
+            error
+        );
+
+
+        removeTyping();
+
+
+        let message =
+            "Connection error. Please check your Vercel API/function and try again.";
+
+
+        if (
+            error?.message
+        ) {
+
+            console.error(
+                error.message
+            );
+
+        }
+
+
+        addMessage(
+            "❌ " +
+            message,
+            "ai"
+        );
+
+
+    } finally {
+
+        sending =
+            false;
+
+
+        setSendingState(
+            false
+        );
+
+
+        clearAttachment();
+
+
+        userInput?.focus();
+
+    }
+
+}
+
+
+/* =========================================================
+   SEND BUTTON
+========================================================= */
+
+sendBtn?.addEventListener(
+    "click",
+    sendMessage
+);
+
+
+/* =========================================================
+   ENTER TO SEND
+========================================================= */
+
+userInput?.addEventListener(
+    "keydown",
+    event => {
+
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey
+        ) {
+
+            event.preventDefault();
+
+
+            sendMessage();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   SENDING STATE
+========================================================= */
+
+function setSendingState(
+    active
+) {
+
+    if (!sendBtn) {
+        return;
+    }
+
+
+    sendBtn.disabled =
+        active;
+
+
+    sendBtn.textContent =
+        active
+            ? "⏳"
+            : "➤";
+
+
+    if (micBtn) {
+
+        micBtn.disabled =
+            active;
+
+    }
+
+}
+
+
+/* =========================================================
+   THINK HARDER
+========================================================= */
+
+thinkBtn?.addEventListener(
+    "click",
+    () => {
+
+        thinkHarder =
+            !thinkHarder;
+
+
+        thinkBtn.classList.toggle(
+            "active",
+            thinkHarder
+        );
+
+
+        closePlus();
+
+
+        if (thinkHarder) {
+
+            showTemporaryNotice(
+                "🧠 Think Harder enabled"
+            );
+
+        } else {
+
+            showTemporaryNotice(
+                "🧠 Think Harder disabled"
+            );
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   TEMPORARY NOTICE
+========================================================= */
+
+function showTemporaryNotice(
+    text
+) {
+
+    const notice =
+        document.createElement(
+            "div"
+        );
+
+
+    notice.className =
+        "swift-notice";
+
+
+    notice.textContent =
+        text;
+
+
+    document.body.appendChild(
+        notice
+    );
+
+
+    setTimeout(
+        () => {
+
+            notice.remove();
+
+        },
+        1800
+    );
 
 }
 
@@ -1635,6 +3107,7 @@ pluginBtn?.addEventListener(
     () => {
 
         closePlus();
+
 
         pluginModal?.classList.add(
             "show"
@@ -1657,26 +3130,27 @@ pluginClose?.addEventListener(
 
 
 /* =========================================================
-   THINK HARDER
+   PROFILE
 ========================================================= */
 
-thinkBtn?.addEventListener(
+profileBtn?.addEventListener(
     "click",
     () => {
 
-        thinkHarder =
-            !thinkHarder;
-
-
-        thinkBtn.classList.toggle(
-            "active",
-            thinkHarder
+        profileModal?.classList.add(
+            "show"
         );
 
+    }
+);
 
-        thinkBtn.setAttribute(
-            "aria-pressed",
-            String(thinkHarder)
+
+profileClose?.addEventListener(
+    "click",
+    () => {
+
+        profileModal?.classList.remove(
+            "show"
         );
 
     }
@@ -1684,324 +3158,27 @@ thinkBtn?.addEventListener(
 
 
 /* =========================================================
-   SEND MESSAGE
+   MODAL BACKDROP
 ========================================================= */
 
-sendBtn?.addEventListener(
+document.addEventListener(
     "click",
-    sendMessage
-);
-
-
-userInput?.addEventListener(
-    "keydown",
     event => {
 
         if (
-            event.key === "Enter" &&
-            !event.shiftKey
+            event.target.classList.contains(
+                "modal"
+            )
         ) {
 
-            event.preventDefault();
-
-            sendMessage();
+            event.target.classList.remove(
+                "show"
+            );
 
         }
 
     }
 );
-
-
-/* =========================================================
-   FILE TO BASE64
-========================================================= */
-
-function fileToBase64(file) {
-
-    return new Promise(
-        (resolve, reject) => {
-
-            const reader =
-                new FileReader();
-
-
-            reader.onload =
-                () => {
-
-                    const result =
-                        reader.result;
-
-                    const base64 =
-                        String(result)
-                            .split(",")[1];
-
-                    resolve(base64);
-
-                };
-
-
-            reader.onerror =
-                reject;
-
-
-            reader.readAsDataURL(
-                file
-            );
-
-        }
-    );
-
-}
-
-
-/* =========================================================
-   SEND TO VERCEL
-========================================================= */
-
-async function sendMessage() {
-
-    if (sending) {
-        return;
-    }
-
-
-    const message =
-        userInput?.value?.trim() || "";
-
-
-    if (
-        !message &&
-        !selectedImage &&
-        !selectedVideo &&
-        !selectedFile
-    ) {
-
-        return;
-
-    }
-
-
-    sending = true;
-
-
-    if (sendBtn) {
-
-        sendBtn.disabled =
-            true;
-
-    }
-
-
-    const attachment =
-        selectedImage
-            ? {
-                type: "image",
-                url:
-                    URL.createObjectURL(
-                        selectedImage
-                    )
-            }
-            : selectedVideo
-                ? {
-                    type: "video",
-                    url:
-                        URL.createObjectURL(
-                            selectedVideo
-                        )
-                }
-                : selectedFile
-                    ? {
-                        type: "file",
-                        name:
-                            selectedFile.name
-                    }
-                    : null;
-
-
-    addMessage(
-        message,
-        "user",
-        attachment,
-        true
-    );
-
-
-    const imageFile =
-        selectedImage;
-
-
-    const videoFile =
-        selectedVideo;
-
-
-    userInput.value = "";
-
-    resizeInput();
-
-
-    clearAttachment();
-
-    showTyping();
-
-
-    try {
-
-        const body = {
-
-            message,
-
-            thinkHarder
-
-        };
-
-
-        /* IMAGE */
-
-        if (imageFile) {
-
-            body.image = {
-
-                data:
-                    await fileToBase64(
-                        imageFile
-                    ),
-
-                mimeType:
-                    imageFile.type
-
-            };
-
-        }
-
-
-        /*
-          Video is displayed locally.
-
-          The current /api/gemini.js
-          accepts image input, not video input.
-        */
-
-        if (videoFile) {
-
-            body.message =
-                message ||
-                "I recorded a video, but video analysis is not enabled yet. Please describe what you want to do with the video.";
-
-        }
-
-
-        const response =
-            await fetch(
-                "/api/gemini",
-                {
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body:
-                        JSON.stringify(body)
-                }
-            );
-
-
-        let data = null;
-
-
-        try {
-
-            data =
-                await response.json();
-
-        } catch {
-
-            throw new Error(
-                "Vercel API returned an invalid response."
-            );
-
-        }
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                data?.error ||
-                `API error ${response.status}`
-            );
-
-        }
-
-
-        const answer =
-            data?.answer ||
-            data?.reply ||
-            data?.text;
-
-
-        if (!answer) {
-
-            throw new Error(
-                "The AI returned an empty response."
-            );
-
-        }
-
-
-        removeTyping();
-
-
-        addMessage(
-            answer,
-            "ai",
-            null,
-            true
-        );
-
-
-        saveCurrentChat();
-
-
-    } catch (error) {
-
-        console.error(
-            "SwiftCortex API error:",
-            error
-        );
-
-
-        removeTyping();
-
-
-        addMessage(
-            "Connection error: " +
-            (
-                error?.message ||
-                "Unable to connect to the AI."
-            ),
-            "ai",
-            null,
-            false
-        );
-
-    }
-
-
-    sending = false;
-
-
-    if (sendBtn) {
-
-        sendBtn.disabled =
-            false;
-
-    }
-
-
-    userInput?.focus();
-
-}
 
 
 /* =========================================================
@@ -2010,12 +3187,16 @@ async function sendMessage() {
 
 function updateMemoryUI() {
 
+    const state =
+        memoryEnabled
+            ? "ON"
+            : "OFF";
+
+
     if (memoryStatus) {
 
         memoryStatus.textContent =
-            memoryEnabled
-                ? "ON"
-                : "OFF";
+            state;
 
     }
 
@@ -2058,7 +3239,13 @@ memoryBtn?.addEventListener(
    THEME
 ========================================================= */
 
-function applyTheme(theme) {
+function applyTheme(
+    theme
+) {
+
+    currentTheme =
+        theme;
+
 
     if (theme === "light") {
 
@@ -2068,6 +3255,7 @@ function applyTheme(theme) {
 
     }
 
+
     else if (theme === "dark") {
 
         document.body.classList.remove(
@@ -2076,16 +3264,18 @@ function applyTheme(theme) {
 
     }
 
+
     else {
 
-        const light =
+        const prefersLight =
             window.matchMedia(
                 "(prefers-color-scheme: light)"
             ).matches;
 
+
         document.body.classList.toggle(
             "light",
-            light
+            prefersLight
         );
 
     }
@@ -2101,6 +3291,7 @@ function updateThemeButton() {
     if (!themeBtn) {
         return;
     }
+
 
     const light =
         document.body.classList.contains(
@@ -2138,7 +3329,9 @@ themeBtn?.addEventListener(
         );
 
 
-        applyTheme(next);
+        applyTheme(
+            next
+        );
 
     }
 );
@@ -2146,6 +3339,894 @@ themeBtn?.addEventListener(
 
 /* =========================================================
    SETTINGS
+========================================================= */
+
+const settingsData = {
+
+    account: {
+
+        icon: "👤",
+
+        title: "Account",
+
+        description:
+            "Manage your SwiftCortex account",
+
+        content: `
+
+            <div class="settings-detail-card">
+
+                <div class="settings-big-icon">
+                    👤
+                </div>
+
+                <h3>
+                    Guest User
+                </h3>
+
+                <p>
+                    You are currently using SwiftCortex as a guest.
+                </p>
+
+                <button class="settings-action">
+                    🔐 Sign In
+                </button>
+
+                <button class="settings-action">
+                    📝 Create Account
+                </button>
+
+            </div>
+
+        `
+
+    },
+
+
+    memory: {
+
+        icon: "🧠",
+
+        title: "Memory",
+
+        description:
+            "Control what SwiftCortex remembers",
+
+        content: `
+
+            <div class="settings-option-row">
+
+                <div>
+
+                    <strong>
+                        Memory
+                    </strong>
+
+                    <small>
+                        Allow SwiftCortex to remember useful information between conversations.
+                    </small>
+
+                </div>
+
+                <button
+                    id="memoryToggleSettings"
+                    class="settings-toggle"
+                >
+                    <span></span>
+                </button>
+
+            </div>
+
+            <div class="settings-info">
+                🧠 Memory helps SwiftCortex provide more personalized responses.
+            </div>
+
+        `
+
+    },
+
+
+    appearance: {
+
+        icon: "🎨",
+
+        title: "Appearance",
+
+        description:
+            "Choose how SwiftCortex looks",
+
+        content: `
+
+            <div class="settings-section-title">
+                Theme
+            </div>
+
+            <button
+                class="appearance-option"
+                data-theme="dark"
+            >
+                <span>🌙</span>
+
+                <div>
+                    <strong>Dark</strong>
+                    <small>Dark appearance</small>
+                </div>
+
+                <b class="theme-check">
+                    ✓
+                </b>
+            </button>
+
+            <button
+                class="appearance-option"
+                data-theme="light"
+            >
+                <span>☀️</span>
+
+                <div>
+                    <strong>Light</strong>
+                    <small>Light appearance</small>
+                </div>
+
+                <b class="theme-check">
+                    ✓
+                </b>
+            </button>
+
+            <button
+                class="appearance-option"
+                data-theme="system"
+            >
+                <span>💻</span>
+
+                <div>
+                    <strong>System</strong>
+                    <small>Follow your device settings</small>
+                </div>
+
+                <b class="theme-check">
+                    ✓
+                </b>
+            </button>
+
+        `
+
+    },
+
+
+    language: {
+
+        icon: "🌐",
+
+        title: "Language",
+
+        description:
+            "Choose your preferred language",
+
+        content: `
+
+            <div class="settings-section-title">
+                App language
+            </div>
+
+            <select
+                id="languageSelect"
+                class="settings-select"
+            >
+
+                <option value="auto">
+                    Auto
+                </option>
+
+                <option value="en">
+                    English
+                </option>
+
+                <option value="bn">
+                    বাংলা
+                </option>
+
+                <option value="it">
+                    Italiano
+                </option>
+
+                <option value="ar">
+                    العربية
+                </option>
+
+            </select>
+
+            <div class="settings-info">
+                🌐 Your language preference is saved on this device.
+            </div>
+
+        `
+
+    },
+
+
+    notifications: {
+
+        icon: "🔔",
+
+        title: "Notifications",
+
+        description:
+            "Manage notifications",
+
+        content: `
+
+            <div class="settings-option-row">
+
+                <div>
+
+                    <strong>
+                        Notifications
+                    </strong>
+
+                    <small>
+                        Allow SwiftCortex to send notifications.
+                    </small>
+
+                </div>
+
+                <button
+                    id="notificationToggle"
+                    class="settings-toggle"
+                >
+                    <span></span>
+                </button>
+
+            </div>
+
+            <div class="settings-info">
+                🔔 Notification support depends on your browser.
+            </div>
+
+        `
+
+    },
+
+
+    subscription: {
+
+        icon: "💎",
+
+        title: "Subscription",
+
+        description:
+            "Manage your plan",
+
+        content: `
+
+            <div class="subscription-card">
+
+                <div class="subscription-icon">
+                    💎
+                </div>
+
+                <h3>
+                    Free Plan
+                </h3>
+
+                <p>
+                    You are currently using the SwiftCortex Free Plan.
+                </p>
+
+                <button class="premium-btn">
+                    💎 Upgrade to Premium
+                </button>
+
+            </div>
+
+        `
+
+    },
+
+
+    privacy: {
+
+        icon: "🔒",
+
+        title: "Privacy & Data",
+
+        description:
+            "Manage your privacy",
+
+        content: `
+
+            <div class="settings-option-row">
+
+                <div>
+
+                    <strong>
+                        Save chat history
+                    </strong>
+
+                    <small>
+                        Store recent conversations on this device.
+                    </small>
+
+                </div>
+
+                <button
+                    id="historyToggle"
+                    class="settings-toggle"
+                >
+                    <span></span>
+                </button>
+
+            </div>
+
+            <div class="settings-info">
+                🔒 Your local preferences are stored in your browser.
+            </div>
+
+        `
+
+    },
+
+
+    clear: {
+
+        icon: "🗑️",
+
+        title: "Clear History",
+
+        description:
+            "Remove recent chats",
+
+        content: `
+
+            <div class="danger-card">
+
+                <div class="danger-icon">
+                    🗑️
+                </div>
+
+                <h3>
+                    Clear chat history?
+                </h3>
+
+                <p>
+                    This will remove the recent chat list saved on this device.
+                </p>
+
+                <button
+                    id="clearHistoryConfirm"
+                    class="danger-btn"
+                >
+                    🗑️ Clear History
+                </button>
+
+            </div>
+
+        `
+
+    }
+
+};
+
+
+/* =========================================================
+   SETTINGS HOME
+========================================================= */
+
+function openSettingsHome() {
+
+    const box =
+        settingsModal?.querySelector(
+            ".settings-box"
+        );
+
+
+    if (!box) {
+        return;
+    }
+
+
+    const header =
+        box.querySelector(
+            ".modal-header"
+        );
+
+
+    const list =
+        box.querySelector(
+            ".settings-list"
+        );
+
+
+    if (!list) {
+        return;
+    }
+
+
+    const title =
+        header?.querySelector(
+            "strong"
+        );
+
+
+    const subtitle =
+        header?.querySelector(
+            "small"
+        );
+
+
+    if (title) {
+
+        title.textContent =
+            "⚙️ Settings";
+
+    }
+
+
+    if (subtitle) {
+
+        subtitle.textContent =
+            "SwiftCortex AI preferences";
+
+    }
+
+
+    const names = [
+
+        "account",
+        "memory",
+        "appearance",
+        "language",
+        "notifications",
+        "subscription",
+        "privacy",
+        "clear"
+
+    ];
+
+
+    const items =
+        $$(".settings-list .setting-item");
+
+
+    items.forEach(
+        (item, index) => {
+
+            const key =
+                names[index];
+
+
+            if (!key) {
+                return;
+            }
+
+
+            const data =
+                settingsData[key];
+
+
+            item.dataset.setting =
+                key;
+
+
+            const span =
+                item.querySelector(
+                    "span"
+                );
+
+
+            const small =
+                item.querySelector(
+                    "small"
+                );
+
+
+            if (span) {
+
+                span.textContent =
+                    `${data.icon} ${data.title}`;
+
+            }
+
+
+            if (small) {
+
+                small.textContent =
+                    data.description;
+
+            }
+
+
+            item.onclick =
+                () => {
+
+                    openSettingPage(
+                        key
+                    );
+
+                };
+
+        }
+    );
+
+}
+
+
+function openSettingPage(
+    key
+) {
+
+    const data =
+        settingsData[key];
+
+
+    if (!data) {
+        return;
+    }
+
+
+    const box =
+        settingsModal?.querySelector(
+            ".settings-box"
+        );
+
+
+    if (!box) {
+        return;
+    }
+
+
+    const header =
+        box.querySelector(
+            ".modal-header"
+        );
+
+
+    const list =
+        box.querySelector(
+            ".settings-list"
+        );
+
+
+    if (!header || !list) {
+        return;
+    }
+
+
+    const title =
+        header.querySelector(
+            "strong"
+        );
+
+
+    const subtitle =
+        header.querySelector(
+            "small"
+        );
+
+
+    if (title) {
+
+        title.innerHTML =
+            `‹ &nbsp; ${data.icon} ${data.title}`;
+
+
+        title.style.cursor =
+            "pointer";
+
+
+        title.onclick =
+            openSettingsHome;
+
+    }
+
+
+    if (subtitle) {
+
+        subtitle.textContent =
+            data.description;
+
+    }
+
+
+    list.innerHTML = `
+
+        <div class="settings-detail">
+            ${data.content}
+        </div>
+
+    `;
+
+
+    bindSettingControls(
+        key
+    );
+
+}
+
+
+/* =========================================================
+   SETTINGS CONTROLS
+========================================================= */
+
+function bindSettingControls(
+    key
+) {
+
+    if (key === "memory") {
+
+        const toggle =
+            $("memoryToggleSettings");
+
+
+        if (!toggle) {
+            return;
+        }
+
+
+        setToggleState(
+            toggle,
+            memoryEnabled
+        );
+
+
+        toggle.onclick =
+            () => {
+
+                memoryEnabled =
+                    !memoryEnabled;
+
+
+                localStorage.setItem(
+                    "swift_memory",
+                    memoryEnabled
+                        ? "on"
+                        : "off"
+                );
+
+
+                updateMemoryUI();
+
+
+                setToggleState(
+                    toggle,
+                    memoryEnabled
+                );
+
+            };
+
+    }
+
+
+    if (key === "appearance") {
+
+        const options =
+            $$(".appearance-option");
+
+
+        const saved =
+            localStorage.getItem(
+                "swift_theme"
+            ) || "dark";
+
+
+        updateThemeChecks(
+            options,
+            saved
+        );
+
+
+        options.forEach(
+            option => {
+
+                option.onclick =
+                    () => {
+
+                        const theme =
+                            option.dataset.theme;
+
+
+                        localStorage.setItem(
+                            "swift_theme",
+                            theme
+                        );
+
+
+                        applyTheme(
+                            theme
+                        );
+
+
+                        updateThemeChecks(
+                            options,
+                            theme
+                        );
+
+                    };
+
+            }
+        );
+
+    }
+
+
+    if (key === "language") {
+
+        const select =
+            $("languageSelect");
+
+
+        if (!select) {
+            return;
+        }
+
+
+        select.value =
+            localStorage.getItem(
+                "swift_language"
+            ) || "auto";
+
+
+        select.onchange =
+            () => {
+
+                localStorage.setItem(
+                    "swift_language",
+                    select.value
+                );
+
+            };
+
+    }
+
+
+    if (key === "notifications") {
+
+        const toggle =
+            $("notificationToggle");
+
+
+        if (!toggle) {
+            return;
+        }
+
+
+        let enabled =
+            localStorage.getItem(
+                "swift_notifications"
+            ) !== "off";
+
+
+        setToggleState(
+            toggle,
+            enabled
+        );
+
+
+        toggle.onclick =
+            () => {
+
+                enabled =
+                    !enabled;
+
+
+                localStorage.setItem(
+                    "swift_notifications",
+                    enabled
+                        ? "on"
+                        : "off"
+                );
+
+
+                setToggleState(
+                    toggle,
+                    enabled
+                );
+
+            };
+
+    }
+
+
+    if (key === "privacy") {
+
+        const toggle =
+            $("historyToggle");
+
+
+        if (!toggle) {
+            return;
+        }
+
+
+        let enabled =
+            localStorage.getItem(
+                "swift_save_history"
+            ) !== "off";
+
+
+        setToggleState(
+            toggle,
+            enabled
+        );
+
+
+        toggle.onclick =
+            () => {
+
+                enabled =
+                    !enabled;
+
+
+                localStorage.setItem(
+                    "swift_save_history",
+                    enabled
+                        ? "on"
+                        : "off"
+                );
+
+
+                setToggleState(
+                    toggle,
+                    enabled
+                );
+
+            };
+
+    }
+
+
+    if (key === "clear") {
+
+        $("clearHistoryConfirm")
+            ?.addEventListener(
+                "click",
+                clearAllHistory
+            );
+
+    }
+
+}
+
+
+function setToggleState(
+    toggle,
+    enabled
+) {
+
+    if (!toggle) {
+        return;
+    }
+
+
+    toggle.classList.toggle(
+        "active",
+        enabled
+    );
+
+}
+
+
+function updateThemeChecks(
+    options,
+    current
+) {
+
+    options.forEach(
+        option => {
+
+            option.classList.toggle(
+                "selected",
+                option.dataset.theme === current
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   SETTINGS OPEN/CLOSE
 ========================================================= */
 
 settingsBtn?.addEventListener(
@@ -2156,9 +4237,13 @@ settingsBtn?.addEventListener(
             "open"
         );
 
+
         settingsModal?.classList.add(
             "show"
         );
+
+
+        openSettingsHome();
 
     }
 );
@@ -2174,131 +4259,6 @@ settingsClose?.addEventListener(
 
     }
 );
-
-
-/* =========================================================
-   PROFILE
-========================================================= */
-
-profileBtn?.addEventListener(
-    "click",
-    () => {
-
-        profileModal?.classList.add(
-            "show"
-        );
-
-    }
-);
-
-
-profileClose?.addEventListener(
-    "click",
-    () => {
-
-        profileModal?.classList.remove(
-            "show"
-        );
-
-    }
-);
-
-
-/* =========================================================
-   LOAD HISTORY
-========================================================= */
-
-function loadHistory() {
-
-    if (!historyList) {
-        return;
-    }
-
-    historyList.innerHTML = "";
-
-
-    const history =
-        getHistory();
-
-
-    history.forEach(
-        chat => {
-
-            const item =
-                document.createElement(
-                    "button"
-                );
-
-            item.className =
-                "history-item";
-
-            item.textContent =
-                chat.title ||
-                "New Chat";
-
-
-            item.addEventListener(
-                "click",
-                () => {
-
-                    loadChat(
-                        chat
-                    );
-
-                }
-            );
-
-
-            historyList.appendChild(
-                item
-            );
-
-        }
-    );
-
-}
-
-
-function loadChat(chat) {
-
-    if (!chat) {
-        return;
-    }
-
-
-    currentChat =
-        Array.isArray(
-            chat.messages
-        )
-            ? [...chat.messages]
-            : [];
-
-
-    messages.innerHTML = "";
-
-
-    currentChat.forEach(
-        item => {
-
-            addMessage(
-                item.text,
-                item.type,
-                null,
-                false
-            );
-
-        }
-    );
-
-
-    sidebar?.classList.remove(
-        "open"
-    );
-
-
-    scrollChat();
-
-}
 
 
 /* =========================================================
@@ -2322,12 +4282,12 @@ function clearAllHistory() {
     }
 
 
-    showWelcome();
-
-
-    alert(
-        "✅ Chat history has been cleared."
+    showTemporaryNotice(
+        "✅ Chat history cleared"
     );
+
+
+    openSettingsHome();
 
 }
 
@@ -2338,102 +4298,36 @@ function clearAllHistory() {
 
 function loadSettings() {
 
-    const savedMemory =
-        localStorage.getItem(
-            "swift_memory"
-        );
-
-
-    if (savedMemory !== null) {
-
-        memoryEnabled =
-            savedMemory === "on";
-
-    }
-
-
     const savedTheme =
         localStorage.getItem(
             "swift_theme"
-        );
+        ) || "dark";
 
 
-    if (savedTheme) {
+    applyTheme(
+        savedTheme
+    );
 
-        applyTheme(
-            savedTheme
-        );
 
-    }
-
-    else {
-
-        applyTheme(
-            "dark"
-        );
-
-    }
+    memoryEnabled =
+        localStorage.getItem(
+            "swift_memory"
+        ) !== "off";
 
 
     updateMemoryUI();
 
+
+    renderHistory();
+
+
+    resizeInput();
+
 }
 
 
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
-
-        loadSettings();
-
-        loadHistory();
-
-        resizeInput();
-
-    }
-);
-
-
 /* =========================================================
-   GLOBAL ESCAPE
-========================================================= */
-
-document.addEventListener(
-    "keydown",
-    event => {
-
-        if (event.key !== "Escape") {
-            return;
-        }
-
-        closePlus();
-
-        closeCamera();
-
-        settingsModal?.classList.remove(
-            "show"
-        );
-
-        pluginModal?.classList.remove(
-            "show"
-        );
-
-        profileModal?.classList.remove(
-            "show"
-        );
-
-    }
-);
-
-
-/* =========================================================
-   START
+   PAGE LOAD
 ========================================================= */
 
 loadSettings();
-
-loadHistory();
-
-console.log(
-    "⚡ SwiftCortex AI Ultra script.js loaded successfully."
-);
