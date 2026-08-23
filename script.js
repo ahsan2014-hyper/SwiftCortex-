@@ -2221,3 +2221,589 @@ if (recordTime)
 console.log(
     "⚡ SwiftCortex AI Ultra loaded successfully."
 );
+/* =========================================================
+   CUSTOMER SUPPORT CHAT
+========================================================= */
+
+const supportBtn = $("supportBtn");
+const supportModal = $("supportModal");
+const supportClose = $("supportClose");
+
+const supportMessages = $("supportMessages");
+const supportInput = $("supportInput");
+const supportSend = $("supportSend");
+const supportMic = $("supportMic");
+
+let supportListening = false;
+
+
+/* =========================================================
+   OPEN SUPPORT
+========================================================= */
+
+supportBtn?.addEventListener(
+    "click",
+    () => {
+
+        closePlus();
+
+        supportModal?.classList.add("show");
+
+        sidebar?.classList.remove("open");
+
+        setTimeout(() => {
+            supportInput?.focus();
+        }, 100);
+
+    }
+);
+
+
+/* =========================================================
+   CLOSE SUPPORT
+========================================================= */
+
+supportClose?.addEventListener(
+    "click",
+    () => {
+
+        supportModal?.classList.remove("show");
+
+    }
+);
+
+
+/* =========================================================
+   CLOSE WHEN CLICKING OUTSIDE
+========================================================= */
+
+supportModal?.addEventListener(
+    "click",
+    event => {
+
+        if (
+            event.target === supportModal
+        ) {
+
+            supportModal.classList.remove(
+                "show"
+            );
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   ADD SUPPORT MESSAGE
+========================================================= */
+
+function addSupportMessage(
+    text,
+    type = "user"
+) {
+
+    if (!supportMessages) {
+        return;
+    }
+
+    const message =
+        document.createElement("div");
+
+    message.className =
+        type === "user"
+            ? "support-message support-user"
+            : "support-message support-agent";
+
+
+    const name =
+        document.createElement("div");
+
+    name.className =
+        "support-message-name";
+
+
+    name.textContent =
+        type === "user"
+            ? "👤 You"
+            : "🤖 SwiftCortex Support";
+
+
+    const messageText =
+        document.createElement("div");
+
+    messageText.className =
+        "support-message-text";
+
+
+    messageText.textContent =
+        text;
+
+
+    message.appendChild(name);
+
+    message.appendChild(messageText);
+
+    supportMessages.appendChild(message);
+
+
+    supportMessages.scrollTop =
+        supportMessages.scrollHeight;
+
+}
+
+
+/* =========================================================
+   SUPPORT TYPING
+========================================================= */
+
+function showSupportTyping() {
+
+    removeSupportTyping();
+
+
+    const message =
+        document.createElement("div");
+
+    message.id =
+        "supportTyping";
+
+    message.className =
+        "support-message support-agent";
+
+
+    const name =
+        document.createElement("div");
+
+    name.className =
+        "support-message-name";
+
+    name.textContent =
+        "🤖 SwiftCortex Support";
+
+
+    const text =
+        document.createElement("div");
+
+    text.className =
+        "support-message-text";
+
+    text.textContent =
+        "Support is typing…";
+
+
+    message.appendChild(name);
+
+    message.appendChild(text);
+
+    supportMessages?.appendChild(
+        message
+    );
+
+
+    if (supportMessages) {
+
+        supportMessages.scrollTop =
+            supportMessages.scrollHeight;
+
+    }
+
+}
+
+
+function removeSupportTyping() {
+
+    $("supportTyping")?.remove();
+
+}
+
+
+/* =========================================================
+   SUPPORT AUTO REPLY
+========================================================= */
+
+function getSupportReply(message) {
+
+    const text =
+        message.toLowerCase();
+
+
+    if (
+        text.includes("hello") ||
+        text.includes("hi") ||
+        text.includes("হাই") ||
+        text.includes("হ্যালো")
+    ) {
+
+        return (
+            "Hello! 👋 Welcome to SwiftCortex Support. " +
+            "How can we help you?"
+        );
+
+    }
+
+
+    if (
+        text.includes("problem") ||
+        text.includes("issue") ||
+        text.includes("সমস্যা") ||
+        text.includes("ঝামেলা")
+    ) {
+
+        return (
+            "I'm sorry you're experiencing a problem. " +
+            "Please describe the issue and tell us what " +
+            "you were trying to do. We'll help you troubleshoot it."
+        );
+
+    }
+
+
+    if (
+        text.includes("camera") ||
+        text.includes("ক্যামেরা")
+    ) {
+
+        return (
+            "For camera problems, please make sure your browser " +
+            "has camera permission and that no other application " +
+            "is currently using the camera."
+        );
+
+    }
+
+
+    if (
+        text.includes("microphone") ||
+        text.includes("mic") ||
+        text.includes("মাইক্রোফোন") ||
+        text.includes("ভয়েস")
+    ) {
+
+        return (
+            "For microphone problems, please allow microphone " +
+            "permission in your browser. You can also check " +
+            "whether your selected language matches the language " +
+            "you are speaking."
+        );
+
+    }
+
+
+    if (
+        text.includes("api") ||
+        text.includes("connection") ||
+        text.includes("error")
+    ) {
+
+        return (
+            "If you're seeing a connection or API error, please " +
+            "send us the exact error message or a screenshot. " +
+            "That will help us identify the problem."
+        );
+
+    }
+
+
+    if (
+        text.includes("payment") ||
+        text.includes("subscription") ||
+        text.includes("premium")
+    ) {
+
+        return (
+            "For subscription or payment questions, please tell us " +
+            "what you're trying to change or purchase."
+        );
+
+    }
+
+
+    if (
+        text.includes("বাংলা") ||
+        text.includes("bangla")
+    ) {
+
+        return (
+            "অবশ্যই! আপনি বাংলাতেও Customer Support-এর সাথে " +
+            "কথা বলতে পারেন। আপনার সমস্যাটি বাংলায় লিখুন।"
+        );
+
+    }
+
+
+    return (
+        "Thanks for contacting SwiftCortex Support. 😊 " +
+        "Please provide a little more information about your " +
+        "question or problem, and we'll help you."
+    );
+
+}
+
+
+/* =========================================================
+   SEND SUPPORT MESSAGE
+========================================================= */
+
+async function sendSupportMessage() {
+
+    if (!supportInput) {
+        return;
+    }
+
+
+    const text =
+        supportInput.value.trim();
+
+
+    if (!text) {
+        return;
+    }
+
+
+    addSupportMessage(
+        text,
+        "user"
+    );
+
+
+    supportInput.value = "";
+
+    supportInput.style.height = "auto";
+
+
+    showSupportTyping();
+
+
+    await new Promise(
+        resolve =>
+            setTimeout(
+                resolve,
+                700
+            )
+    );
+
+
+    removeSupportTyping();
+
+
+    const reply =
+        getSupportReply(text);
+
+
+    addSupportMessage(
+        reply,
+        "agent"
+    );
+
+}
+
+
+/* =========================================================
+   SUPPORT SEND BUTTON
+========================================================= */
+
+supportSend?.addEventListener(
+    "click",
+    sendSupportMessage
+);
+
+
+/* =========================================================
+   SUPPORT ENTER
+========================================================= */
+
+supportInput?.addEventListener(
+    "keydown",
+    event => {
+
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey
+        ) {
+
+            event.preventDefault();
+
+            sendSupportMessage();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   SUPPORT TEXTAREA AUTO RESIZE
+========================================================= */
+
+supportInput?.addEventListener(
+    "input",
+    () => {
+
+        supportInput.style.height =
+            "auto";
+
+        supportInput.style.height =
+            Math.min(
+                supportInput.scrollHeight,
+                120
+            ) + "px";
+
+    }
+);
+
+
+/* =========================================================
+   SUPPORT MICROPHONE
+========================================================= */
+
+supportMic?.addEventListener(
+    "click",
+    () => {
+
+        if (
+            !(
+                "webkitSpeechRecognition"
+                in window
+            ) &&
+            !(
+                "SpeechRecognition"
+                in window
+            )
+        ) {
+
+            alert(
+                "Voice input is not supported by this browser."
+            );
+
+            return;
+
+        }
+
+
+        const SpeechRecognition =
+            window.SpeechRecognition ||
+            window.webkitSpeechRecognition;
+
+
+        if (!supportRecognition) {
+
+            supportRecognition =
+                new SpeechRecognition();
+
+
+            supportRecognition.continuous =
+                false;
+
+            supportRecognition.interimResults =
+                false;
+
+            supportRecognition.lang =
+                document.documentElement.lang ||
+                "en-US";
+
+
+            supportRecognition.onstart =
+                () => {
+
+                    supportListening =
+                        true;
+
+                    supportMic.textContent =
+                        "🔴";
+
+                };
+
+
+            supportRecognition.onresult =
+                event => {
+
+                    const transcript =
+                        event.results[0][0]
+                            .transcript;
+
+                    if (supportInput) {
+
+                        supportInput.value =
+                            transcript;
+
+                        supportInput.dispatchEvent(
+                            new Event("input")
+                        );
+
+                    }
+
+                };
+
+
+            supportRecognition.onerror =
+                error => {
+
+                    console.error(
+                        "Support voice error:",
+                        error
+                    );
+
+                };
+
+
+            supportRecognition.onend =
+                () => {
+
+                    supportListening =
+                        false;
+
+                    supportMic.textContent =
+                        "🎙️";
+
+                };
+
+        }
+
+
+        if (supportListening) {
+
+            supportRecognition.stop();
+
+            return;
+
+        }
+
+
+        supportRecognition.lang =
+            getSpeechLanguage();
+
+
+        supportRecognition.start();
+
+    }
+);
+
+
+let supportRecognition = null;
+
+
+/* =========================================================
+   SPEECH LANGUAGE
+========================================================= */
+
+function getSpeechLanguage() {
+
+    const language =
+        localStorage.getItem(
+            "swift_language"
+        );
+
+
+    if (language) {
+        return language;
+    }
+
+
+    return (
+        navigator.language ||
+        "en-US"
+    );
+
+       }
