@@ -2,169 +2,88 @@
 
 const $=id=>document.getElementById(id);
 
-const plusBtn=$("plusBtn"),plusMenu=$("plusMenu");
-const cameraBtn=$("cameraBtn"),photoBtn=$("photoBtn");
-const fileBtn=$("fileBtn"),pluginBtn=$("pluginBtn");
-const thinkBtn=$("thinkBtn");
-const imageInput=$("imageInput"),fileInput=$("fileInput");
-const input=$("userInput"),send=$("sendBtn"),messages=$("messages");
-const preview=$("imagePreview");
+const plus=$("plusBtn");
+const menu=$("plusMenu");
+const input=$("userInput");
+const send=$("sendBtn");
+const messages=$("messages");
 
-let image=null,video=null,file=null;
-let thinking=false,sending=false;
-let stream=null,recorder=null,chunks=[];
+let image=null;
+let video=null;
+let file=null;
+let sending=false;
 
-function msg(text,type="ai",media=null){
- const b=document.createElement("div");
- b.className=type==="user"?"user-message":"ai-message";
- if(text)b.textContent=text;
- if(media){
-  const x=document.createElement(media.type==="video"?"video":"img");
-  x.src=media.url;
-  if(media.type==="video")x.controls=true;
-  x.style.maxWidth="280px";
-  x.style.borderRadius="14px";
-  b.appendChild(x);
- }
- messages.appendChild(b);
+function addMsg(text,type="ai"){
+ const d=document.createElement("div");
+ d.className=type==="user"?"user-message":"ai-message";
+ d.textContent=text;
+ messages.appendChild(d);
  messages.scrollTop=messages.scrollHeight;
- return b;
+ return d;
 }
 
-plusBtn.onclick=e=>{
+/* PLUS */
+
+plus.onclick=e=>{
  e.stopPropagation();
- plusMenu.classList.toggle("show");
+ menu.classList.toggle("show");
 };
 
 document.onclick=e=>{
- if(!plusMenu.contains(e.target)&&e.target!==plusBtn)
-  plusMenu.classList.remove("show");
+ if(!menu.contains(e.target)&&e.target!==plus)
+  menu.classList.remove("show");
 };
 
-function clear(){
- image=video=file=null;
- preview.innerHTML="";
- imageInput.value="";
- fileInput.value="";
-}
+/* PHOTO */
 
-function show(file,type){
- preview.innerHTML="";
- const name=document.createElement("span");
- name.textContent=(type==="image"?"🖼 ":type==="video"?"🎥 ":"📄 ")+file.name;
- name.style.color="white";
- preview.appendChild(name);
-}
-
-photoBtn.onclick=()=>{
- plusMenu.classList.remove("show");
- imageInput.click();
+$("photoBtn").onclick=()=>{
+ menu.classList.remove("show");
+ $("imageInput").click();
 };
 
-imageInput.onchange=()=>{
- const f=imageInput.files[0];
+$("imageInput").onchange=e=>{
+ const f=e.target.files[0];
  if(!f)return;
- image=f;video=file=null;
- show(f,"image");
+
+ image=f;
+ video=null;
+ file=null;
+
+ addMsg("🖼 "+f.name,"user");
 };
 
-fileBtn.onclick=()=>{
- plusMenu.classList.remove("show");
- fileInput.click();
+/* FILE */
+
+$("fileBtn").onclick=()=>{
+ menu.classList.remove("show");
+ $("fileInput").click();
 };
 
-fileInput.onchange=()=>{
- const f=fileInput.files[0];
+$("fileInput").onchange=e=>{
+ const f=e.target.files[0];
  if(!f)return;
- if(f.type.startsWith("image/"))image=f;
- else if(f.type.startsWith("video/"))video=f;
+
+ if(f.type.startsWith("image/")) image=f;
+ else if(f.type.startsWith("video/")) video=f;
  else file=f;
- show(f,f.type.startsWith("image/")?"image":f.type.startsWith("video/")?"video":"file");
+
+ addMsg("📎 "+f.name,"user");
 };
 
-pluginBtn.onclick=()=>{
- plusMenu.classList.remove("show");
- msg("🧩 Plugins are ready to be connected.");
+/* PLUGIN */
+
+$("pluginBtn").onclick=()=>{
+ menu.classList.remove("show");
+ addMsg("🧩 Plugins are ready to be connected.");
 };
 
-thinkBtn.onclick=()=>{
- thinking=!thinking;
- thinkBtn.textContent=thinking?"🧠 Think Harder ✓":"🧠 Think Harder";
- plusMenu.classList.remove("show");
-};
+/* THINK */
 
-function previewMedia(f,type){
- return {type,url:URL.createObjectURL(f)};
-}
+$("thinkBtn").onclick=()=>{
+ menu.classList.remove("show");
+ addMsg("🧠 Think Harder enabled.");
+};
 /* ================= SEND ================= */
-
-async function sendMessage(){
- if(sending)return;
-
- const text=input.value.trim();
-
- if(!text&&!image&&!video&&!file)return;
-
- sending=true;
- send.disabled=true;
-
- let media=null;
-
- if(image)media=previewMedia(image,"image");
- if(video)media=previewMedia(video,"video");
-
- msg(text||"📎 Attachment","user",media);
-
- input.value="";
- clear();
-
- const loading=msg("⏳ Thinking...");
-
- try{
-  const body={message:text};
-
-  if(image){
-   body.image=await toBase64(image);
-  }
-
-  if(video){
-   body.video=await toBase64(video);
-  }
-
-  const r=await fetch("/api/gemini",{
-   method:"POST",
-   headers:{"Content-Type":"application/json"},
-   body:JSON.stringify(body)
-  });
-
-  const data=await r.json();
-
-  loading.remove();
-
-  if(!r.ok){
-   msg("❌ Server error: "+r.status);
-   return;
-  }
-
-  msg(data.text||data.reply||"No response.");
- }
- catch(e){
-  loading.remove();
-  msg("❌ Connection error: "+e.message);
- }
- finally{
-  sending=false;
-  send.disabled=false;
- }
-}
-
-function toBase64(f){
- return new Promise((resolve,reject)=>{
-  const r=new FileReader();
-  r.onload=()=>resolve(r.result);
-  r.onerror=reject;
-  r.readAsDataURL(f);
-}
 
 send.onclick=sendMessage;
 
@@ -175,45 +94,157 @@ input.onkeydown=e=>{
  }
 };
 
+async function sendMessage(){
 
-/* ================= CAMERA ================= */
+ if(sending)return;
 
-cameraBtn.onclick=async()=>{
- plusMenu.classList.remove("show");
- $("cameraModal").classList.add("show");
+ const text=input.value.trim();
+
+ if(!text&&!image&&!video&&!file)return;
+
+ sending=true;
+ send.disabled=true;
+
+ const userText=text||"📎 Attachment";
+ addMsg(userText,"user");
+
+ input.value="";
+
+ const loading=addMsg("⏳ Thinking...");
 
  try{
-  stream=await navigator.mediaDevices.getUserMedia({
-   video:true,
-   audio:true
+
+  const body={message:text};
+
+  if(image){
+   body.image=await base64(image);
+  }
+
+  if(video){
+   body.video=await base64(video);
+  }
+
+  const response=await fetch("/api/gemini",{
+   method:"POST",
+   headers:{
+    "Content-Type":"application/json"
+   },
+   body:JSON.stringify(body)
   });
 
-  $("cameraVideo").srcObject=stream;
- }
- catch(e){
-  $("cameraError").classList.add("show");
-  $("cameraErrorText").textContent="Camera permission denied.";
- }
-};
+  const data=await response.json();
 
-$("cameraClose").onclick=closeCamera;
+  loading.remove();
 
-function closeCamera(){
- if(stream){
-  stream.getTracks().forEach(t=>t.stop());
-  stream=null;
+  if(!response.ok){
+   addMsg("❌ Server error: "+response.status);
+   return;
+  }
+
+  addMsg(
+   data.text||
+   data.reply||
+   data.message||
+   "No response from AI."
+  );
+
+ }catch(error){
+
+  loading.remove();
+
+  addMsg(
+   "❌ Connection error: "+
+   error.message
+  );
+
+ }finally{
+
+  sending=false;
+  send.disabled=false;
+
+  image=null;
+  video=null;
+  file=null;
+
+  $("imageInput").value="";
+  $("fileInput").value="";
  }
- $("cameraVideo").srcObject=null;
- $("cameraModal").classList.remove("show");
 }
 
 
-/* ================= TAKE PHOTO ================= */
+/* ================= FILE TO BASE64 ================= */
+
+function base64(file){
+
+ return new Promise((resolve,reject)=>{
+
+  const reader=new FileReader();
+
+  reader.onload=()=>{
+   resolve(reader.result);
+  };
+
+  reader.onerror=reject;
+
+  reader.readAsDataURL(file);
+ });
+}
+
+
+/* ================= CAMERA ================= */
+
+$("cameraBtn").onclick=async()=>{
+
+ menu.classList.remove("show");
+
+ $("cameraModal").classList.add("show");
+
+ try{
+
+  window.cameraStream=
+   await navigator.mediaDevices.getUserMedia({
+    video:true,
+    audio:true
+   });
+
+  $("cameraVideo").srcObject=
+   window.cameraStream;
+
+ }catch(error){
+
+  $("cameraError").classList.add("show");
+
+  $("cameraErrorText").textContent=
+   "Camera permission is required.";
+
+ }
+};
+
+
+/* ================= CLOSE CAMERA ================= */
+
+$("cameraClose").onclick=()=>{
+
+ if(window.cameraStream){
+
+  window.cameraStream
+   .getTracks()
+   .forEach(track=>track.stop());
+
+  window.cameraStream=null;
+ }
+
+ $("cameraVideo").srcObject=null;
+
+ $("cameraModal").classList.remove("show");
+};
+/* ================= PHOTO ================= */
 
 $("takePhoto").onclick=()=>{
+
  const v=$("cameraVideo");
 
- if(!stream)return;
+ if(!window.cameraStream)return;
 
  const c=document.createElement("canvas");
 
@@ -222,80 +253,27 @@ $("takePhoto").onclick=()=>{
 
  c.getContext("2d").drawImage(v,0,0);
 
- c.toBlob(b=>{
+ c.toBlob(blob=>{
+
   image=new File(
-   [b],
+   [blob],
    "camera-photo.jpg",
    {type:"image/jpeg"}
   );
 
-  video=file=null;
-  show(image,"image");
-  closeCamera();
+  video=null;
+  file=null;
+
+  $("cameraClose").click();
+
  },"image/jpeg",.9);
 };
 
 
-/* ================= VIDEO ================= */
-
-$("startRecord").onclick=()=>{
- if(!stream)return;
-
- chunks=[];
-
- recorder=new MediaRecorder(stream);
-
- recorder.ondataavailable=e=>{
-  if(e.data.size)chunks.push(e.data);
- };
-
- recorder.onstop=()=>{
-  const b=new Blob(chunks,{type:"video/webm"});
-
-  video=new File(
-   [b],
-   "camera-video.webm",
-   {type:"video/webm"}
-  );
-
-  image=file=null;
-  show(video,"video");
- };
-
- recorder.start();
-
- $("startRecord").style.display="none";
- $("stopRecord").style.display="inline-flex";
-};
-
-$("stopRecord").onclick=()=>{
- if(recorder)recorder.stop();
-
- $("startRecord").style.display="inline-flex";
- $("stopRecord").style.display="none";
-};
-
-
-/* ================= SWITCH CAMERA ================= */
-
-$("switchCamera").onclick=async()=>{
- closeCamera();
-
- stream=await navigator.mediaDevices.getUserMedia({
-  video:{
-   facingMode:"environment"
-  },
-  audio:true
- });
-
- $("cameraModal").classList.add("show");
- $("cameraVideo").srcObject=stream;
-};
-
-
-/* ================= CAMERA MODE ================= */
+/* ================= VIDEO MODE ================= */
 
 $("photoMode").onclick=()=>{
+
  $("photoMode").classList.add("active");
  $("videoMode").classList.remove("active");
 
@@ -304,7 +282,9 @@ $("photoMode").onclick=()=>{
  $("stopRecord").style.display="none";
 };
 
+
 $("videoMode").onclick=()=>{
+
  $("videoMode").classList.add("active");
  $("photoMode").classList.remove("active");
 
@@ -314,20 +294,118 @@ $("videoMode").onclick=()=>{
 };
 
 
+/* ================= RECORD VIDEO ================= */
+
+$("startRecord").onclick=()=>{
+
+ if(!window.cameraStream)return;
+
+ window.chunks=[];
+
+ window.recorder=new MediaRecorder(
+  window.cameraStream
+ );
+
+ window.recorder.ondataavailable=e=>{
+
+  if(e.data.size)
+   window.chunks.push(e.data);
+ };
+
+ window.recorder.onstop=()=>{
+
+  const blob=new Blob(
+   window.chunks,
+   {type:"video/webm"}
+  );
+
+  video=new File(
+   [blob],
+   "camera-video.webm",
+   {type:"video/webm"}
+  );
+
+  image=null;
+  file=null;
+
+  $("startRecord").style.display="inline-flex";
+  $("stopRecord").style.display="none";
+ };
+
+ window.recorder.start();
+
+ $("startRecord").style.display="none";
+ $("stopRecord").style.display="inline-flex";
+};
+
+
+/* ================= STOP VIDEO ================= */
+
+$("stopRecord").onclick=()=>{
+
+ if(window.recorder)
+  window.recorder.stop();
+
+};
+
+
+/* ================= SWITCH CAMERA ================= */
+
+$("switchCamera").onclick=async()=>{
+
+ if(window.cameraStream){
+
+  window.cameraStream
+   .getTracks()
+   .forEach(track=>track.stop());
+ }
+
+ try{
+
+  window.cameraStream=
+   await navigator.mediaDevices.getUserMedia({
+
+    video:{
+     facingMode:"environment"
+    },
+
+    audio:true
+
+   });
+
+  $("cameraVideo").srcObject=
+   window.cameraStream;
+
+ }catch(e){
+
+  console.error(e);
+
+ }
+};
+
+
 /* ================= NEW CHAT ================= */
 
 const newChat=$("newChat");
 
 if(newChat){
+
  newChat.onclick=()=>{
+
   messages.innerHTML="";
+
   input.value="";
-  clear();
-  msg("👋 New chat started.");
+
+  image=null;
+  video=null;
+  file=null;
+
+  addMsg("👋 New chat started.");
+
  };
 }
+/* ================= READY ================= */
 
-
-/* ================= START ================= */
-
-console.log("⚡ SwiftCortex AI Ultra loaded");
+console.log(
+ "⚡ SwiftCortex AI Ultra is ready"
+);
