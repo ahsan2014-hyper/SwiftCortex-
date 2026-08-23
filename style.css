@@ -548,3 +548,88 @@ textarea{
     }
 
         }
+html,body{
+  width:100%;
+  min-height:100%;
+  margin:0;
+  overflow:hidden;
+}
+
+body{
+  min-height:100vh;
+}
+
+.app{
+  width:100%;
+  min-height:100vh;
+  height:100vh;
+  display:flex;
+}
+
+.sidebar{
+  height:100vh;
+  overflow-y:auto;
+  flex-shrink:0;
+}
+
+.chat-area{
+  min-width:0;
+  min-height:0;
+  height:100vh;
+  flex:1;
+  display:flex;
+  flex-direction:column;
+}
+
+.messages{
+  flex:1;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+}
+
+.input-area{
+  flex-shrink:0;
+}
+
+/* Mobile */
+@media(max-width:768px){
+
+  .sidebar{
+    width:220px;
+  }
+
+  .chat-area{
+    width:100%;
+  }
+
+  .messages{
+    padding:15px;
+  }
+
+  .input-area{
+    padding:8px;
+  }
+
+}
+
+/* Make page usable on small screens */
+@media(max-width:480px){
+
+  .sidebar{
+    width:190px;
+  }
+
+  .sidebar .logo{
+    font-size:14px;
+  }
+
+  .new-chat{
+    font-size:13px;
+  }
+
+  .input-area textarea{
+    min-width:0;
+  }
+
+}
