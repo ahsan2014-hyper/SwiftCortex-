@@ -1,260 +1,522 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<meta name="theme-color" content="#070b14">
-<title>SwiftCortex AI Ultra</title>
-<link rel="stylesheet" href="style.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#070b14">
+
+    <title>SwiftCortex AI Ultra</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
 </head>
 
 <body>
 
 <div class="app">
 
-<!-- SIDEBAR -->
-<aside class="sidebar" id="sidebar">
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
 
-    <div class="brand">
-        <div class="brand-icon">⚡</div>
-        <div>
-            <strong>SwiftCortex</strong>
-            <small>AI Ultra</small>
-        </div>
-    </div>
+    <aside class="sidebar" id="sidebar">
 
-    <button class="new-chat" id="newChat">
-        ＋ New Chat
-    </button>
+        <div class="brand">
+            <div class="brand-icon">⚡</div>
 
-    <div class="sidebar-section">
-        <div class="section-title">RECENT</div>
-        <div id="historyList"></div>
-    </div>
-
-    <div class="sidebar-bottom">
-
-        <button class="side-btn" id="memoryBtn">
-            🧠 <span>Memory</span>
-            <b id="memoryStatus">ON</b>
-        </button>
-
-        <button class="side-btn" id="settingsBtn">
-            ⚙️ <span>Settings</span>
-        </button>
-
-        <button class="side-btn" id="themeBtn">
-            🌙 <span>Dark Mode</span>
-        </button>
-
-        <button class="profile-btn" id="profileBtn">
-            <span class="avatar">A</span>
-            <span class="profile-text">
-                <strong>Guest User</strong>
-                <small>Free Plan</small>
-            </span>
-            <span>⋮</span>
-        </button>
-
-    </div>
-
-</aside>
-
-
-<!-- MAIN -->
-<main class="main">
-
-    <!-- TOP BAR -->
-    <header class="topbar">
-
-        <button id="menuBtn" class="icon-btn">
-            ☰
-        </button>
-
-        <div class="top-title">
-            <strong>SwiftCortex AI</strong>
-            <span>Ultra</span>
+            <div>
+                <strong>SwiftCortex</strong>
+                <small>AI Ultra</small>
+            </div>
         </div>
 
-        <button id="newTopChat" class="top-new">
-            ＋ New
+
+        <button class="new-chat" id="newChat">
+            ＋ New Chat
         </button>
 
-    </header>
 
+        <div class="sidebar-section">
 
-    <!-- CHAT -->
-    <section class="chat" id="messages">
-
-        <div class="welcome">
-
-            <div class="welcome-logo">
-                ⚡
+            <div class="section-title">
+                RECENT
             </div>
 
-            <h1>Welcome to SwiftCortex AI</h1>
-
-            <p>
-                Your intelligent AI assistant for chat,
-                images, files, ideas and more.
-            </p>
-
-            <div class="quick-actions">
-
-                <button data-prompt="Tell me today's latest news">
-                    📰 Latest News
-                </button>
-
-                <button data-prompt="Help me write something">
-                    ✍️ Write
-                </button>
-
-                <button data-prompt="Explain something to me">
-                    💡 Explain
-                </button>
-
-                <button data-prompt="Help me with coding">
-                    💻 Coding
-                </button>
-
-            </div>
+            <div id="historyList"></div>
 
         </div>
 
-    </section>
+
+        <div class="sidebar-bottom">
+
+            <button class="side-btn" id="memoryBtn">
+                🧠
+                <span>Memory</span>
+                <b id="memoryStatus">ON</b>
+            </button>
 
 
-    <!-- ATTACHMENT PREVIEW -->
-    <div id="imagePreview" class="attachment-preview"></div>
+            <button class="side-btn" id="settingsBtn">
+                ⚙️
+                <span>Settings</span>
+            </button>
 
 
-    <!-- INPUT -->
-    <footer class="composer">
+            <button class="side-btn" id="themeBtn">
+                🌙
+                <span>Dark Mode</span>
+            </button>
 
-        <div class="composer-box">
 
-            <div class="plus-wrap">
+            <button class="profile-btn" id="profileBtn">
 
-                <button id="plusBtn" class="composer-btn">
-                    ＋
-                </button>
+                <span class="avatar">
+                    A
+                </span>
 
-                <div id="plusMenu" class="plus-menu">
+                <span class="profile-text">
+                    <strong>Guest User</strong>
+                    <small>Free Plan</small>
+                </span>
 
-                    <button id="cameraBtn">
-                        <span>📷</span>
-                        <div>
-                            <strong>Camera</strong>
-                            <small>Take a photo or video</small>
-                        </div>
+                <span>⋮</span>
+
+            </button>
+
+        </div>
+
+    </aside>
+
+
+
+    <!-- =====================================================
+         MAIN
+    ====================================================== -->
+
+    <main class="main">
+
+
+        <!-- =================================================
+             TOP NAVIGATION BAR
+        ================================================== -->
+
+        <header class="topbar">
+
+            <button
+                id="menuBtn"
+                class="icon-btn"
+                aria-label="Open menu"
+            >
+                ☰
+            </button>
+
+
+            <div class="top-title">
+
+                <strong>
+                    SwiftCortex AI
+                </strong>
+
+                <span>
+                    Ultra
+                </span>
+
+            </div>
+
+
+            <button
+                id="newTopChat"
+                class="top-new"
+            >
+                ＋ New
+            </button>
+
+        </header>
+
+
+
+        <!-- =================================================
+             CHAT AREA
+        ================================================== -->
+
+        <section
+            class="chat"
+            id="messages"
+        >
+
+            <div class="welcome">
+
+                <div class="welcome-logo">
+                    ⚡
+                </div>
+
+
+                <h1>
+                    Welcome to SwiftCortex AI
+                </h1>
+
+
+                <p>
+                    Your intelligent AI assistant for
+                    chat, images, files, ideas and more.
+                </p>
+
+
+                <div class="quick-actions">
+
+                    <button
+                        data-prompt="Tell me today's latest news"
+                    >
+                        📰 Latest News
                     </button>
 
-                    <button id="photoBtn">
-                        <span>🖼️</span>
-                        <div>
-                            <strong>Photos</strong>
-                            <small>Upload an image</small>
-                        </div>
+
+                    <button
+                        data-prompt="Help me write something"
+                    >
+                        ✍️ Write
                     </button>
 
-                    <button id="fileBtn">
-                        <span>📄</span>
-                        <div>
-                            <strong>Files</strong>
-                            <small>Upload a file</small>
-                        </div>
+
+                    <button
+                        data-prompt="Explain something to me"
+                    >
+                        💡 Explain
                     </button>
 
-                    <button id="pluginBtn">
-                        <span>🧩</span>
-                        <div>
-                            <strong>Plugins</strong>
-                            <small>Explore tools</small>
-                        </div>
-                    </button>
 
-                    <button id="thinkBtn">
-                        <span>🧠</span>
-                        <div>
-                            <strong>Think Harder</strong>
-                            <small>Use deeper reasoning</small>
-                        </div>
+                    <button
+                        data-prompt="Help me with coding"
+                    >
+                        💻 Coding
                     </button>
 
                 </div>
 
             </div>
 
-
-            <input
-                type="file"
-                id="imageInput"
-                accept="image/*"
-                hidden
-            >
-
-            <input
-                type="file"
-                id="fileInput"
-                hidden
-            >
+        </section>
 
 
-            <textarea
-                id="userInput"
-                rows="1"
-                placeholder="Message SwiftCortex AI..."
-            ></textarea>
+
+        <!-- =================================================
+             ATTACHMENT PREVIEW
+        ================================================== -->
+
+        <div
+            id="imagePreview"
+            class="attachment-preview"
+        ></div>
 
 
-            <button id="sendBtn" class="send-btn">
-                ➤
-            </button>
 
-        </div>
+        <!-- =================================================
+             COMPOSER
+        ================================================== -->
 
-        <div class="composer-note">
-            SwiftCortex AI can make mistakes. Check important information.
-        </div>
+        <footer class="composer">
 
-    </footer>
+            <div class="composer-box">
 
-</main>
+
+                <!-- PLUS -->
+
+                <div class="plus-wrap">
+
+                    <button
+                        id="plusBtn"
+                        class="composer-btn"
+                        type="button"
+                        aria-label="Add attachment"
+                    >
+                        ＋
+                    </button>
+
+
+                    <div
+                        id="plusMenu"
+                        class="plus-menu"
+                    >
+
+
+                        <!-- CAMERA -->
+
+                        <button
+                            id="cameraBtn"
+                            type="button"
+                        >
+
+                            <span>📷</span>
+
+                            <div>
+                                <strong>Camera</strong>
+                                <small>
+                                    Take a photo or video
+                                </small>
+                            </div>
+
+                        </button>
+
+
+                        <!-- PHOTOS -->
+
+                        <button
+                            id="photoBtn"
+                            type="button"
+                        >
+
+                            <span>🖼️</span>
+
+                            <div>
+                                <strong>Photos</strong>
+                                <small>
+                                    Upload an image
+                                </small>
+                            </div>
+
+                        </button>
+
+
+                        <!-- FILES -->
+
+                        <button
+                            id="fileBtn"
+                            type="button"
+                        >
+
+                            <span>📄</span>
+
+                            <div>
+                                <strong>Files</strong>
+                                <small>
+                                    Upload a file
+                                </small>
+                            </div>
+
+                        </button>
+
+
+                        <!-- PLUGINS -->
+
+                        <button
+                            id="pluginBtn"
+                            type="button"
+                        >
+
+                            <span>🧩</span>
+
+                            <div>
+                                <strong>Plugins</strong>
+                                <small>
+                                    Explore tools
+                                </small>
+                            </div>
+
+                        </button>
+
+
+                        <!-- THINK HARDER -->
+
+                        <button
+                            id="thinkBtn"
+                            type="button"
+                        >
+
+                            <span>🧠</span>
+
+                            <div>
+                                <strong>
+                                    Think Harder
+                                </strong>
+
+                                <small>
+                                    Use deeper reasoning
+                                </small>
+                            </div>
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- IMAGE INPUT -->
+
+                <input
+                    type="file"
+                    id="imageInput"
+                    accept="image/jpeg,image/png,image/webp,image/*"
+                    hidden
+                >
+
+
+                <!-- FILE INPUT -->
+
+                <input
+                    type="file"
+                    id="fileInput"
+                    accept="*/*"
+                    hidden
+                >
+
+
+                <!-- CAMERA IMAGE INPUT FALLBACK -->
+
+                <input
+                    type="file"
+                    id="cameraInput"
+                    accept="image/*"
+                    capture="environment"
+                    hidden
+                >
+
+
+                <!-- VIDEO INPUT -->
+
+                <input
+                    type="file"
+                    id="videoInput"
+                    accept="video/*"
+                    capture="environment"
+                    hidden
+                >
+
+
+
+                <!-- TEXT INPUT -->
+
+                <textarea
+                    id="userInput"
+                    rows="1"
+                    maxlength="12000"
+                    placeholder="Message SwiftCortex AI..."
+                    autocomplete="off"
+                    spellcheck="true"
+                ></textarea>
+
+
+
+                <!-- MICROPHONE -->
+
+                <button
+                    id="micBtn"
+                    class="mic-btn"
+                    type="button"
+                    aria-label="Voice input"
+                    title="Voice input"
+                >
+                    🎤
+                </button>
+
+
+
+                <!-- SEND -->
+
+                <button
+                    id="sendBtn"
+                    class="send-btn"
+                    type="button"
+                    aria-label="Send message"
+                    title="Send"
+                >
+                    ➤
+                </button>
+
+            </div>
+
+
+            <div
+                id="voiceStatus"
+                class="voice-status"
+                aria-live="polite"
+            ></div>
+
+
+            <div class="composer-note">
+                SwiftCortex AI can make mistakes.
+                Check important information.
+            </div>
+
+        </footer>
+
+    </main>
 
 </div>
 
 
-<!-- CAMERA -->
 
-<div id="cameraModal" class="modal">
+<!-- =========================================================
+     CAMERA MODAL
+========================================================== -->
+
+<div
+    id="cameraModal"
+    class="modal"
+>
 
     <div class="modal-box camera-box">
 
+
         <div class="modal-header">
+
             <div>
-                <strong>📷 Camera</strong>
-                <small>SwiftCortex AI</small>
+                <strong>
+                    📷 Camera
+                </strong>
+
+                <small>
+                    SwiftCortex AI
+                </small>
             </div>
 
-            <button id="cameraClose" class="close-btn">
+
+            <button
+                id="cameraClose"
+                class="close-btn"
+                type="button"
+            >
                 ✕
             </button>
+
         </div>
+
+
+
+        <!-- CAMERA MODE -->
 
         <div class="camera-mode">
 
-            <button id="photoMode" class="mode-btn active">
+            <button
+                id="photoMode"
+                class="mode-btn active"
+                type="button"
+            >
                 📸 Photo
             </button>
 
-            <button id="videoMode" class="mode-btn">
+
+            <button
+                id="videoMode"
+                class="mode-btn"
+                type="button"
+            >
                 🎥 Video
             </button>
 
         </div>
+
+
+
+        <!-- CAMERA SCREEN -->
 
         <div class="camera-screen">
 
@@ -265,38 +527,75 @@
                 muted
             ></video>
 
+
             <div id="recordTime">
                 🔴 00:00
             </div>
 
-            <div id="cameraError" class="camera-error">
-                <strong>Camera unavailable</strong>
+
+            <div
+                id="cameraError"
+                class="camera-error"
+            >
+
+                <strong>
+                    Camera unavailable
+                </strong>
+
                 <span id="cameraErrorText">
                     Please allow camera access.
                 </span>
+
             </div>
 
         </div>
 
+
+
+        <!-- CAMERA CONTROLS -->
+
         <div class="camera-controls">
 
-            <button id="switchCamera" class="round-control">
+            <button
+                id="switchCamera"
+                class="round-control"
+                type="button"
+                title="Switch camera"
+            >
                 🔄
             </button>
 
-            <button id="takePhoto" class="camera-main">
+
+            <button
+                id="takePhoto"
+                class="camera-main"
+                type="button"
+            >
                 📸 Take Photo
             </button>
 
-            <button id="startRecord" class="record-btn" style="display:none">
+
+            <button
+                id="startRecord"
+                class="record-btn"
+                type="button"
+                style="display:none"
+            >
                 ⏺ Record
             </button>
 
-            <button id="stopRecord" class="stop-btn" style="display:none">
+
+            <button
+                id="stopRecord"
+                class="stop-btn"
+                type="button"
+                style="display:none"
+            >
                 ⏹ Stop
             </button>
 
         </div>
+
 
         <div id="mediaResult"></div>
 
@@ -305,63 +604,164 @@
 </div>
 
 
-<!-- SETTINGS -->
 
-<div id="settingsModal" class="modal">
+<!-- =========================================================
+     SETTINGS MODAL
+========================================================== -->
+
+<div
+    id="settingsModal"
+    class="modal"
+>
 
     <div class="modal-box settings-box">
 
+
         <div class="modal-header">
+
             <div>
-                <strong>⚙️ Settings</strong>
-                <small>SwiftCortex AI preferences</small>
+                <strong>
+                    ⚙️ Settings
+                </strong>
+
+                <small>
+                    SwiftCortex AI preferences
+                </small>
             </div>
 
-            <button id="settingsClose" class="close-btn">
+
+            <button
+                id="settingsClose"
+                class="close-btn"
+                type="button"
+            >
                 ✕
             </button>
+
         </div>
+
+
 
         <div class="settings-list">
 
-            <button class="setting-item">
-                <span>👤 Account</span>
-                <small>Guest account</small>
+
+            <button
+                class="setting-item"
+                id="accountSetting"
+                type="button"
+            >
+                <span>
+                    👤 Account
+                </span>
+
+                <small>
+                    Guest account
+                </small>
             </button>
 
-            <button class="setting-item">
-                <span>🧠 Memory</span>
-                <small id="settingsMemory">On</small>
+
+            <button
+                class="setting-item"
+                id="memorySetting"
+                type="button"
+            >
+                <span>
+                    🧠 Memory
+                </span>
+
+                <small id="settingsMemory">
+                    On
+                </small>
             </button>
 
-            <button class="setting-item">
-                <span>🌙 Appearance</span>
-                <small>Dark</small>
+
+            <button
+                class="setting-item"
+                id="appearanceSetting"
+                type="button"
+            >
+                <span>
+                    🌙 Appearance
+                </span>
+
+                <small id="appearanceStatus">
+                    Dark
+                </small>
             </button>
 
-            <button class="setting-item">
-                <span>🌐 Language</span>
-                <small>Auto</small>
+
+            <button
+                class="setting-item"
+                id="languageSetting"
+                type="button"
+            >
+                <span>
+                    🌐 Language
+                </span>
+
+                <small>
+                    Auto
+                </small>
             </button>
 
-            <button class="setting-item">
-                <span>🔔 Notifications</span>
-                <small>Manage notifications</small>
+
+            <button
+                class="setting-item"
+                id="notificationSetting"
+                type="button"
+            >
+                <span>
+                    🔔 Notifications
+                </span>
+
+                <small>
+                    Manage notifications
+                </small>
             </button>
 
-            <button class="setting-item">
-                <span>💎 Subscription</span>
-                <small>Upgrade plan</small>
+
+            <button
+                class="setting-item"
+                id="subscriptionSetting"
+                type="button"
+            >
+                <span>
+                    💎 Subscription
+                </span>
+
+                <small>
+                    Upgrade plan
+                </small>
             </button>
 
-            <button class="setting-item">
-                <span>🔒 Privacy</span>
-                <small>Privacy controls</small>
+
+            <button
+                class="setting-item"
+                id="privacySetting"
+                type="button"
+            >
+                <span>
+                    🔒 Privacy
+                </span>
+
+                <small>
+                    Privacy controls
+                </small>
             </button>
 
-            <button class="setting-item">
-                <span>🗑️ Clear History</span>
-                <small>Remove recent chats</small>
+
+            <button
+                class="setting-item"
+                id="clearHistorySetting"
+                type="button"
+            >
+                <span>
+                    🗑️ Clear History
+                </span>
+
+                <small>
+                    Remove recent chats
+                </small>
             </button>
 
         </div>
@@ -371,61 +771,140 @@
 </div>
 
 
-<!-- PLUGINS -->
 
-<div id="pluginModal" class="modal">
+<!-- =========================================================
+     PLUGINS MODAL
+========================================================== -->
+
+<div
+    id="pluginModal"
+    class="modal"
+>
 
     <div class="modal-box plugin-box">
 
+
         <div class="modal-header">
 
             <div>
-                <strong>🧩 Plugins</strong>
-                <small>SwiftCortex tools</small>
+                <strong>
+                    🧩 Plugins
+                </strong>
+
+                <small>
+                    SwiftCortex tools
+                </small>
             </div>
 
-            <button id="pluginClose" class="close-btn">
+
+            <button
+                id="pluginClose"
+                class="close-btn"
+                type="button"
+            >
                 ✕
             </button>
 
         </div>
 
+
+
         <div class="plugin-grid">
 
-            <button class="plugin-card">
+
+            <button
+                class="plugin-card"
+                type="button"
+            >
                 🔎
-                <strong>Web Search</strong>
-                <small>Search the web</small>
+
+                <strong>
+                    Web Search
+                </strong>
+
+                <small>
+                    Search the web
+                </small>
             </button>
 
-            <button class="plugin-card">
+
+            <button
+                class="plugin-card"
+                type="button"
+            >
                 🖼️
-                <strong>AI Image</strong>
-                <small>Generate images</small>
+
+                <strong>
+                    AI Image
+                </strong>
+
+                <small>
+                    Generate images
+                </small>
             </button>
 
-            <button class="plugin-card">
+
+            <button
+                class="plugin-card"
+                type="button"
+            >
                 🎬
-                <strong>AI Video</strong>
-                <small>Generate videos</small>
+
+                <strong>
+                    AI Video
+                </strong>
+
+                <small>
+                    Generate videos
+                </small>
             </button>
 
-            <button class="plugin-card">
+
+            <button
+                class="plugin-card"
+                type="button"
+            >
                 💻
-                <strong>Code</strong>
-                <small>Developer tools</small>
+
+                <strong>
+                    Code
+                </strong>
+
+                <small>
+                    Developer tools
+                </small>
             </button>
 
-            <button class="plugin-card">
+
+            <button
+                class="plugin-card"
+                type="button"
+            >
                 📊
-                <strong>Data</strong>
-                <small>Analyze data</small>
+
+                <strong>
+                    Data
+                </strong>
+
+                <small>
+                    Analyze data
+                </small>
             </button>
 
-            <button class="plugin-card">
+
+            <button
+                class="plugin-card"
+                type="button"
+            >
                 🌐
-                <strong>Translator</strong>
-                <small>Translate languages</small>
+
+                <strong>
+                    Translator
+                </strong>
+
+                <small>
+                    Translate languages
+                </small>
             </button>
 
         </div>
@@ -435,34 +914,63 @@
 </div>
 
 
-<!-- PROFILE -->
 
-<div id="profileModal" class="modal">
+<!-- =========================================================
+     PROFILE MODAL
+========================================================== -->
+
+<div
+    id="profileModal"
+    class="modal"
+>
 
     <div class="modal-box profile-box">
+
 
         <div class="modal-header">
 
             <div>
-                <strong>👤 Account</strong>
-                <small>SwiftCortex AI</small>
+                <strong>
+                    👤 Account
+                </strong>
+
+                <small>
+                    SwiftCortex AI
+                </small>
             </div>
 
-            <button id="profileClose" class="close-btn">
+
+            <button
+                id="profileClose"
+                class="close-btn"
+                type="button"
+            >
                 ✕
             </button>
 
         </div>
 
-        <button class="account-btn">
+
+        <button
+            class="account-btn"
+            type="button"
+        >
             🔐 Sign In
         </button>
 
-        <button class="account-btn">
+
+        <button
+            class="account-btn"
+            type="button"
+        >
             📝 Create Account
         </button>
 
-        <button class="account-btn premium">
+
+        <button
+            class="account-btn premium"
+            type="button"
+        >
             💎 View Subscription
         </button>
 
@@ -470,6 +978,11 @@
 
 </div>
 
+
+
+<!-- =========================================================
+     VOICE / MICROPHONE SCRIPT SUPPORT
+========================================================== -->
 
 <script src="script.js"></script>
 
