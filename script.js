@@ -2,421 +2,203 @@
 
 const $=id=>document.getElementById(id);
 
-const plus=$("plusBtn");
-const menu=$("plusMenu");
-const input=$("userInput");
-const send=$("sendBtn");
-const messages=$("messages");
+const plusBtn=$("plusBtn"),plusMenu=$("plusMenu");
+const cameraBtn=$("cameraBtn"),photoBtn=$("photoBtn"),fileBtn=$("fileBtn");
+const pluginBtn=$("pluginBtn"),thinkBtn=$("thinkBtn");
+const imageInput=$("imageInput"),fileInput=$("fileInput");
+const userInput=$("userInput"),sendBtn=$("sendBtn");
+const messages=$("messages"),imagePreview=$("imagePreview");
 
-let image=null;
-let video=null;
-let file=null;
-let sending=false;
+let selectedImage=null,selectedVideo=null,selectedFile=null;
+let sending=false,thinkHarder=false;
+let stream=null,facing="user";
 
-function addMsg(text,type="ai"){
- const d=document.createElement("div");
- d.className=type==="user"?"user-message":"ai-message";
- d.textContent=text;
- messages.appendChild(d);
+function msg(text,type="ai",file=null){
+ const b=document.createElement("div");
+ b.className=type==="user"?"user-message":"ai-message";
+ if(text){
+  const t=document.createElement("div");
+  t.textContent=text;
+  b.appendChild(t);
+ }
+ if(file?.type==="image"){
+  const i=document.createElement("img");
+  i.src=file.url;
+  i.style.cssText="max-width:280px;max-height:280px;border-radius:14px;display:block;margin-top:8px";
+  b.appendChild(i);
+ }
+ if(file?.type==="video"){
+  const v=document.createElement("video");
+  v.src=file.url;
+  v.controls=true;
+  v.playsInline=true;
+  v.style.cssText="max-width:300px;max-height:280px;border-radius:14px;display:block;margin-top:8px";
+  b.appendChild(v);
+ }
+ if(file?.type==="file"){
+  const f=document.createElement("div");
+  f.textContent="📄 "+file.name;
+  b.appendChild(f);
+ }
+ messages.appendChild(b);
  messages.scrollTop=messages.scrollHeight;
- return d;
+ return b;
 }
 
-/* PLUS */
+function closeMenu(){
+ if(plusMenu)plusMenu.classList.remove("show");
+}
 
-plus.onclick=e=>{
+plusBtn?.addEventListener("click",e=>{
  e.stopPropagation();
- menu.classList.toggle("show");
-};
+ plusMenu?.classList.toggle("show");
+});
 
-document.onclick=e=>{
- if(!menu.contains(e.target)&&e.target!==plus)
-  menu.classList.remove("show");
-};
+document.addEventListener("click",e=>{
+ if(plusMenu&&!plusMenu.contains(e.target)&&e.target!==plusBtn)
+  closeMenu();
+});
 
-/* PHOTO */
+photoBtn?.addEventListener("click",()=>{
+ closeMenu();
+ if(imageInput){
+  imageInput.value="";
+  imageInput.click();
+ }
+});
 
-$("photoBtn").onclick=()=>{
- menu.classList.remove("show");
- $("imageInput").click();
-};
+imageInput?.addEventListener("change",()=>{
+ const f=imageInput.files?.[0];
+ if(!f)return;
+ if(!f.type.startsWith("image/")){
+  msg("⚠️ Please select an image.");
+  return;
+ }
+ selectedImage=f;
+ selectedVideo=null;
+ selectedFile=null;
+ preview(f,"image");
+});
 
-$("imageInput").onchange=e=>{
- const f=e.target.files[0];
+fileBtn?.addEventListener("click",()=>{
+ closeMenu();
+ if(fileInput){
+  fileInput.value="";
+  fileInput.click();
+ }
+});
+
+fileInput?.addEventListener("change",()=>{
+ const f=fileInput.files?.[0];
  if(!f)return;
 
- image=f;
- video=null;
- file=null;
+ selectedImage=null;
+ selectedVideo=null;
+ selectedFile=null;
 
- addMsg("🖼 "+f.name,"user");
-};
+ if(f.type.startsWith("image/")){
+  selectedImage=f;
+  preview(f,"image");
+ }else if(f.type.startsWith("video/")){
+  selectedVideo=f;
+  preview(f,"video");
+ }else{
+  selectedFile=f;
+  preview(f,"file");
+ }
+});
 
-/* FILE */
+function preview(file,type){
+ if(!imagePreview)return;
 
-$("fileBtn").onclick=()=>{
- menu.classList.remove("show");
- $("fileInput").click();
-};
+ imagePreview.innerHTML="";
 
-$("fileInput").onchange=e=>{
- const f=e.target.files[0];
- if(!f)return;
+ const box=document.createElement("div");
+ box.style.cssText="display:flex;align-items:center;gap:10px;padding:8px;background:#111827;border-radius:12px";
 
- if(f.type.startsWith("image/")) image=f;
- else if(f.type.startsWith("video/")) video=f;
- else file=f;
+ if(type==="image"){
+  const i=document.createElement("img");
+  i.src=URL.createObjectURL(file);
+  i.style.cssText="width:60px;height:60px;object-fit:cover;border-radius:10px";
+  box.appendChild(i);
+ }
 
- addMsg("📎 "+f.name,"user");
-};
+ if(type==="video"){
+  const v=document.createElement("video");
+  v.src=URL.createObjectURL(file);
+  v.controls=true;
+  v.style.cssText="width:90px;height:60px;object-fit:cover;border-radius:10px";
+  box.appendChild(v);
+ }
 
-/* PLUGIN */
+ const n=document.createElement("span");
+ n.textContent=type==="image"?"🖼 "+file.name:
+              type==="video"?"🎥 "+file.name:
+              "📄 "+file.name;
+ n.style.cssText="color:white;flex:1";
+ box.appendChild(n);
 
-$("pluginBtn").onclick=()=>{
- menu.classList.remove("show");
- addMsg("🧩 Plugins are ready to be connected.");
-};
+ const x=document.createElement("button");
+ x.textContent="✕";
+ x.type="button";
+ x.onclick=clearFile;
+ x.style.cssText="border:0;background:#374151;color:white;border-radius:8px;padding:6px 9px";
+ box.appendChild(x);
 
-/* THINK */
+ imagePreview.appendChild(box);
+}
 
-$("thinkBtn").onclick=()=>{
- menu.classList.remove("show");
- addMsg("🧠 Think Harder enabled.");
-};
-/* ================= SEND ================= */
+function clearFile(){
+ selectedImage=null;
+ selectedVideo=null;
+ selectedFile=null;
+ if(imageInput)imageInput.value="";
+ if(fileInput)fileInput.value="";
+ if(imagePreview)imagePreview.innerHTML="";
+}
 
-send.onclick=sendMessage;
+thinkBtn?.addEventListener("click",()=>{
+ thinkHarder=!thinkHarder;
+ thinkBtn.textContent=thinkHarder?"🧠 Think Harder ✓":"🧠 Think Harder";
+ closeMenu();
+});
 
-input.onkeydown=e=>{
+pluginBtn?.addEventListener("click",()=>{
+ closeMenu();
+ msg("🧩 Plugins are ready to be connected.");
+});
+
+userInput?.addEventListener("input",()=>{
+ userInput.style.height="auto";
+ userInput.style.height=Math.min(userInput.scrollHeight,150)+"px";
+});
+
+userInput?.addEventListener("keydown",e=>{
  if(e.key==="Enter"&&!e.shiftKey){
   e.preventDefault();
   sendMessage();
  }
-};
-
-async function sendMessage(){
-
- if(sending)return;
-
- const text=input.value.trim();
-
- if(!text&&!image&&!video&&!file)return;
-
- sending=true;
- send.disabled=true;
-
- const userText=text||"📎 Attachment";
- addMsg(userText,"user");
-
- input.value="";
-
- const loading=addMsg("⏳ Thinking...");
-
- try{
-
-  const body={message:text};
-
-  if(image){
-   body.image=await base64(image);
-  }
-
-  if(video){
-   body.video=await base64(video);
-  }
-
-  const response=await fetch("/api/gemini",{
-   method:"POST",
-   headers:{
-    "Content-Type":"application/json"
-   },
-   body:JSON.stringify(body)
-  });
-
-  const data=await response.json();
-
-  loading.remove();
-
-  if(!response.ok){
-   addMsg("❌ Server error: "+response.status);
-   return;
-  }
-
-  addMsg(
-   data.text||
-   data.reply||
-   data.message||
-   "No response from AI."
-  );
-
- }catch(error){
-
-  loading.remove();
-
-  addMsg(
-   "❌ Connection error: "+
-   error.message
-  );
-
- }finally{
-
-  sending=false;
-  send.disabled=false;
-
-  image=null;
-  video=null;
-  file=null;
-
-  $("imageInput").value="";
-  $("fileInput").value="";
+});
+function file64(file){
+ return new Promise((ok,no)=>{
+  const r=new FileReader();
+  r.onload=()=>ok(r.result);
+  r.onerror=no;
+  r.readAsDataURL(file);
  }
 }
 
+sendBtn?.addEventListener("click",sendMessage);
 
-/* ================= FILE TO BASE64 ================= */
-
-function base64(file){
-
- return new Promise((resolve,reject)=>{
-
-  const reader=new FileReader();
-
-  reader.onload=()=>{
-   resolve(reader.result);
-  };
-
-  reader.onerror=reject;
-
-  reader.readAsDataURL(file);
- });
-}
-
-
-/* ================= CAMERA ================= */
-
-$("cameraBtn").onclick=async()=>{
-
- menu.classList.remove("show");
-
- $("cameraModal").classList.add("show");
-
- try{
-
-  window.cameraStream=
-   await navigator.mediaDevices.getUserMedia({
-    video:true,
-    audio:true
-   });
-
-  $("cameraVideo").srcObject=
-   window.cameraStream;
-
- }catch(error){
-
-  $("cameraError").classList.add("show");
-
-  $("cameraErrorText").textContent=
-   "Camera permission is required.";
-
- }
-};
-
-
-/* ================= CLOSE CAMERA ================= */
-
-$("cameraClose").onclick=()=>{
-
- if(window.cameraStream){
-
-  window.cameraStream
-   .getTracks()
-   .forEach(track=>track.stop());
-
-  window.cameraStream=null;
- }
-
- $("cameraVideo").srcObject=null;
-
- $("cameraModal").classList.remove("show");
-};
-/* ================= PHOTO ================= */
-
-$("takePhoto").onclick=()=>{
-
- const v=$("cameraVideo");
-
- if(!window.cameraStream)return;
-
- const c=document.createElement("canvas");
-
- c.width=v.videoWidth;
- c.height=v.videoHeight;
-
- c.getContext("2d").drawImage(v,0,0);
-
- c.toBlob(blob=>{
-
-  image=new File(
-   [blob],
-   "camera-photo.jpg",
-   {type:"image/jpeg"}
-  );
-
-  video=null;
-  file=null;
-
-  $("cameraClose").click();
-
- },"image/jpeg",.9);
-};
-
-
-/* ================= VIDEO MODE ================= */
-
-$("photoMode").onclick=()=>{
-
- $("photoMode").classList.add("active");
- $("videoMode").classList.remove("active");
-
- $("takePhoto").style.display="inline-flex";
- $("startRecord").style.display="none";
- $("stopRecord").style.display="none";
-};
-
-
-$("videoMode").onclick=()=>{
-
- $("videoMode").classList.add("active");
- $("photoMode").classList.remove("active");
-
- $("takePhoto").style.display="none";
- $("startRecord").style.display="inline-flex";
- $("stopRecord").style.display="none";
-};
-
-
-/* ================= RECORD VIDEO ================= */
-
-$("startRecord").onclick=()=>{
-
- if(!window.cameraStream)return;
-
- window.chunks=[];
-
- window.recorder=new MediaRecorder(
-  window.cameraStream
- );
-
- window.recorder.ondataavailable=e=>{
-
-  if(e.data.size)
-   window.chunks.push(e.data);
- };
-
- window.recorder.onstop=()=>{
-
-  const blob=new Blob(
-   window.chunks,
-   {type:"video/webm"}
-  );
-
-  video=new File(
-   [blob],
-   "camera-video.webm",
-   {type:"video/webm"}
-  );
-
-  image=null;
-  file=null;
-
-  $("startRecord").style.display="inline-flex";
-  $("stopRecord").style.display="none";
- };
-
- window.recorder.start();
-
- $("startRecord").style.display="none";
- $("stopRecord").style.display="inline-flex";
-};
-
-
-/* ================= STOP VIDEO ================= */
-
-$("stopRecord").onclick=()=>{
-
- if(window.recorder)
-  window.recorder.stop();
-
-};
-
-
-/* ================= SWITCH CAMERA ================= */
-
-$("switchCamera").onclick=async()=>{
-
- if(window.cameraStream){
-
-  window.cameraStream
-   .getTracks()
-   .forEach(track=>track.stop());
- }
-
- try{
-
-  window.cameraStream=
-   await navigator.mediaDevices.getUserMedia({
-
-    video:{
-     facingMode:"environment"
-    },
-
-    audio:true
-
-   });
-
-  $("cameraVideo").srcObject=
-   window.cameraStream;
-
- }catch(e){
-
-  console.error(e);
-
- }
-};
-
-
-/* ================= NEW CHAT ================= */
-
-const newChat=$("newChat");
-
-if(newChat){
-
- newChat.onclick=()=>{
-
-  messages.innerHTML="";
-
-  input.value="";
-
-  image=null;
-  video=null;
-  file=null;
-
-  addMsg("👋 New chat started.");
-
- };
-}
-/* ================= READY ================= */
-
-console.log(
- "⚡ SwiftCortex AI Ultra is ready"
-);
 async function sendMessage(){
  if(sending)return;
 
- const text=userInput.value.trim();
+ const text=userInput?.value.trim()||"";
+
  if(!text&&!selectedImage&&!selectedVideo&&!selectedFile)return;
 
  sending=true;
- sendBtn.disabled=true;
+ if(sendBtn)sendBtn.disabled=true;
 
  let att=null;
 
@@ -427,15 +209,15 @@ async function sendMessage(){
  else if(selectedFile)
   att={type:"file",name:selectedFile.name};
 
- addMessage(text||"📎 Attachment","user",att);
+ msg(text||"📎 Attachment","user",att);
 
- const ai=addMessage("Thinking...","ai");
+ const ai=msg("Thinking...","ai");
 
  try{
   let image=null;
 
   if(selectedImage)
-   image=await fileToBase64(selectedImage);
+   image=await file64(selectedImage);
 
   const r=await fetch("/api/gemini",{
    method:"POST",
@@ -443,7 +225,9 @@ async function sendMessage(){
    body:JSON.stringify({
     message:text,
     image:image,
-    thinkHarder:thinkHarder
+    thinkHarder:thinkHarder,
+    clientDate:new Date().toISOString(),
+    timezone:Intl.DateTimeFormat().resolvedOptions().timeZone
    })
   });
 
@@ -455,43 +239,186 @@ async function sendMessage(){
   ai.textContent=d.text||"No response from AI.";
 
  }catch(e){
-  console.error(e);
+  console.error("SwiftCortex:",e);
   ai.textContent="❌ Connection error: "+e.message;
  }
 
- clearAttachment();
- userInput.value="";
- resizeInput();
+ clearFile();
+
+ if(userInput){
+  userInput.value="";
+  userInput.style.height="auto";
+ }
 
  sending=false;
- sendBtn.disabled=false;
-}
-function fileToBase64(file){
- return new Promise((resolve,reject)=>{
-  const reader=new FileReader();
-
-  reader.onload=()=>{
-   resolve(reader.result);
-  };
-
-  reader.onerror=()=>{
-   reject(new Error("Could not read image"));
-  };
-
-  reader.readAsDataURL(file);
+ if(sendBtn)sendBtn.disabled=false;
 }
 
 
-if(sendBtn){
- sendBtn.addEventListener("click",sendMessage);
+/* CAMERA */
+
+cameraBtn?.addEventListener("click",async()=>{
+ closeMenu();
+
+ const modal=$("cameraModal");
+ const video=$("cameraVideo");
+
+ if(!modal||!video){
+  msg("📷 Camera is not available.");
+  return;
+ }
+
+ modal.classList.add("show");
+
+ try{
+  stream=await navigator.mediaDevices.getUserMedia({
+   video:{facingMode:{ideal:facing}},
+   audio:false
+  });
+
+  video.srcObject=stream;
+  await video.play();
+
+ }catch(e){
+  msg("❌ Camera permission is required.");
+ }
+});
+
+
+$("cameraClose")?.addEventListener("click",closeCamera);
+
+function closeCamera(){
+ if(stream){
+  stream.getTracks().forEach(t=>t.stop());
+  stream=null;
+ }
+
+ const video=$("cameraVideo");
+ if(video)video.srcObject=null;
+
+ $("cameraModal")?.classList.remove("show");
 }
 
 
-if(userInput){
- userInput.addEventListener("keydown",e=>{
-  if(e.key==="Enter"&&!e.shiftKey){
-   e.preventDefault();
-   sendMessage();
-  }
- });
+/* TAKE PHOTO */
+
+$("takePhoto")?.addEventListener("click",()=>{
+ const video=$("cameraVideo");
+
+ if(!video||!stream){
+  msg("⚠️ Camera is not ready.");
+  return;
+ }
+
+ const canvas=document.createElement("canvas");
+
+ canvas.width=video.videoWidth||1280;
+ canvas.height=video.videoHeight||720;
+
+ canvas.getContext("2d").drawImage(
+  video,0,0,canvas.width,canvas.height
+ );
+
+ canvas.toBlob(blob=>{
+  if(!blob)return;
+
+  selectedImage=new File(
+   [blob],
+   "swiftcortex-photo.jpg",
+   {type:"image/jpeg"}
+  );
+
+  selectedVideo=null;
+  selectedFile=null;
+
+  preview(selectedImage,"image");
+  closeCamera();
+
+ },"image/jpeg",.9);
+});
+
+
+/* SWITCH CAMERA */
+
+$("switchCamera")?.addEventListener("click",async()=>{
+ facing=facing==="user"?"environment":"user";
+
+ if(!stream)return;
+
+ closeCamera();
+
+ $("cameraModal")?.classList.add("show");
+
+ try{
+  stream=await navigator.mediaDevices.getUserMedia({
+   video:{facingMode:{ideal:facing}},
+   audio:false
+  });
+
+  const video=$("cameraVideo");
+  video.srcObject=stream;
+  await video.play();
+
+ }catch(e){
+  msg("❌ Unable to switch camera.");
+ }
+});
+
+
+/* PHOTO MODE */
+
+$("photoMode")?.addEventListener("click",()=>{
+ $("photoMode")?.classList.add("active");
+ $("videoMode")?.classList.remove("active");
+
+ if($("takePhoto"))$("takePhoto").style.display="inline-flex";
+ if($("startRecord"))$("startRecord").style.display="none";
+ if($("stopRecord"))$("stopRecord").style.display="none";
+});
+
+
+/* VIDEO MODE */
+
+$("videoMode")?.addEventListener("click",()=>{
+ $("videoMode")?.classList.add("active");
+ $("photoMode")?.classList.remove("active");
+
+ if($("takePhoto"))$("takePhoto").style.display="none";
+ if($("startRecord"))$("startRecord").style.display="inline-flex";
+});
+
+
+/* DARK MODE */
+
+const themeBtn=$("themeBtn");
+
+themeBtn?.addEventListener("click",()=>{
+ document.body.classList.toggle("light-mode");
+
+ const light=document.body.classList.contains("light-mode");
+
+ themeBtn.textContent=light?"☀️ Light Mode":"🌙 Dark Mode";
+
+ localStorage.setItem("swiftTheme",light?"light":"dark");
+});
+
+if(localStorage.getItem("swiftTheme")==="light"){
+ document.body.classList.add("light-mode");
+ if(themeBtn)themeBtn.textContent="☀️ Light Mode";
 }
+
+
+/* NEW CHAT */
+
+$("newChat")?.addEventListener("click",()=>{
+ if(messages)
+  messages.innerHTML="";
+
+ msg("👋 New chat started. How can I help you?","ai");
+ clearFile();
+
+ if(userInput){
+  userInput.value="";
+  userInput.focus();
+ }
+});
