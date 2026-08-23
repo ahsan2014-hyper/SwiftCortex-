@@ -2,15 +2,34 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#070b14">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#070b14"
+    >
 
     <title>SwiftCortex AI Ultra</title>
 
-    <link rel="stylesheet" href="style.css">
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
 
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
@@ -26,19 +45,30 @@
          SIDEBAR
     ====================================================== -->
 
-    <aside class="sidebar" id="sidebar">
+    <aside
+        class="sidebar"
+        id="sidebar"
+    >
 
         <div class="brand">
-            <div class="brand-icon">⚡</div>
+
+            <div class="brand-icon">
+                ⚡
+            </div>
 
             <div>
                 <strong>SwiftCortex</strong>
                 <small>AI Ultra</small>
             </div>
+
         </div>
 
 
-        <button class="new-chat" id="newChat">
+        <button
+            class="new-chat"
+            id="newChat"
+            type="button"
+        >
             ＋ New Chat
         </button>
 
@@ -56,37 +86,82 @@
 
         <div class="sidebar-bottom">
 
-            <button class="side-btn" id="memoryBtn">
+            <!-- MEMORY -->
+
+            <button
+                class="side-btn"
+                id="memoryBtn"
+                type="button"
+            >
                 🧠
                 <span>Memory</span>
                 <b id="memoryStatus">ON</b>
             </button>
 
 
-            <button class="side-btn" id="settingsBtn">
+            <!-- CUSTOMER SUPPORT -->
+
+            <button
+                class="side-btn"
+                id="supportBtn"
+                type="button"
+            >
+                💬
+                <span>Customer Support</span>
+            </button>
+
+
+            <!-- SETTINGS -->
+
+            <button
+                class="side-btn"
+                id="settingsBtn"
+                type="button"
+            >
                 ⚙️
                 <span>Settings</span>
             </button>
 
 
-            <button class="side-btn" id="themeBtn">
+            <!-- THEME -->
+
+            <button
+                class="side-btn"
+                id="themeBtn"
+                type="button"
+            >
                 🌙
                 <span>Dark Mode</span>
             </button>
 
 
-            <button class="profile-btn" id="profileBtn">
+            <!-- PROFILE -->
+
+            <button
+                class="profile-btn"
+                id="profileBtn"
+                type="button"
+            >
 
                 <span class="avatar">
                     A
                 </span>
 
                 <span class="profile-text">
-                    <strong>Guest User</strong>
-                    <small>Free Plan</small>
+
+                    <strong>
+                        Guest User
+                    </strong>
+
+                    <small>
+                        Free Plan
+                    </small>
+
                 </span>
 
-                <span>⋮</span>
+                <span>
+                    ⋮
+                </span>
 
             </button>
 
@@ -95,23 +170,20 @@
     </aside>
 
 
-
     <!-- =====================================================
          MAIN
     ====================================================== -->
 
     <main class="main">
 
-
-        <!-- =================================================
-             TOP NAVIGATION BAR
-        ================================================== -->
+        <!-- TOP BAR -->
 
         <header class="topbar">
 
             <button
                 id="menuBtn"
                 class="icon-btn"
+                type="button"
                 aria-label="Open menu"
             >
                 ☰
@@ -134,6 +206,7 @@
             <button
                 id="newTopChat"
                 class="top-new"
+                type="button"
             >
                 ＋ New
             </button>
@@ -141,9 +214,8 @@
         </header>
 
 
-
         <!-- =================================================
-             CHAT AREA
+             CHAT
         ================================================== -->
 
         <section
@@ -172,6 +244,7 @@
                 <div class="quick-actions">
 
                     <button
+                        type="button"
                         data-prompt="Tell me today's latest news"
                     >
                         📰 Latest News
@@ -179,6 +252,7 @@
 
 
                     <button
+                        type="button"
                         data-prompt="Help me write something"
                     >
                         ✍️ Write
@@ -186,6 +260,7 @@
 
 
                     <button
+                        type="button"
                         data-prompt="Explain something to me"
                     >
                         💡 Explain
@@ -193,6 +268,7 @@
 
 
                     <button
+                        type="button"
                         data-prompt="Help me with coding"
                     >
                         💻 Coding
@@ -205,7 +281,6 @@
         </section>
 
 
-
         <!-- =================================================
              ATTACHMENT PREVIEW
         ================================================== -->
@@ -216,7 +291,6 @@
         ></div>
 
 
-
         <!-- =================================================
              COMPOSER
         ================================================== -->
@@ -224,7 +298,6 @@
         <footer class="composer">
 
             <div class="composer-box">
-
 
                 <!-- PLUS -->
 
@@ -234,7 +307,7 @@
                         id="plusBtn"
                         class="composer-btn"
                         type="button"
-                        aria-label="Add attachment"
+                        aria-label="More options"
                     >
                         ＋
                     </button>
@@ -245,7 +318,6 @@
                         class="plus-menu"
                     >
 
-
                         <!-- CAMERA -->
 
                         <button
@@ -253,13 +325,20 @@
                             type="button"
                         >
 
-                            <span>📷</span>
+                            <span>
+                                📷
+                            </span>
 
                             <div>
-                                <strong>Camera</strong>
+
+                                <strong>
+                                    Camera
+                                </strong>
+
                                 <small>
                                     Take a photo or video
                                 </small>
+
                             </div>
 
                         </button>
@@ -272,13 +351,20 @@
                             type="button"
                         >
 
-                            <span>🖼️</span>
+                            <span>
+                                🖼️
+                            </span>
 
                             <div>
-                                <strong>Photos</strong>
+
+                                <strong>
+                                    Photos
+                                </strong>
+
                                 <small>
                                     Upload an image
                                 </small>
+
                             </div>
 
                         </button>
@@ -291,13 +377,20 @@
                             type="button"
                         >
 
-                            <span>📄</span>
+                            <span>
+                                📄
+                            </span>
 
                             <div>
-                                <strong>Files</strong>
+
+                                <strong>
+                                    Files
+                                </strong>
+
                                 <small>
                                     Upload a file
                                 </small>
+
                             </div>
 
                         </button>
@@ -310,13 +403,20 @@
                             type="button"
                         >
 
-                            <span>🧩</span>
+                            <span>
+                                🧩
+                            </span>
 
                             <div>
-                                <strong>Plugins</strong>
+
+                                <strong>
+                                    Plugins
+                                </strong>
+
                                 <small>
                                     Explore tools
                                 </small>
+
                             </div>
 
                         </button>
@@ -329,9 +429,12 @@
                             type="button"
                         >
 
-                            <span>🧠</span>
+                            <span>
+                                🧠
+                            </span>
 
                             <div>
+
                                 <strong>
                                     Think Harder
                                 </strong>
@@ -339,6 +442,7 @@
                                 <small>
                                     Use deeper reasoning
                                 </small>
+
                             </div>
 
                         </button>
@@ -348,13 +452,12 @@
                 </div>
 
 
-
                 <!-- IMAGE INPUT -->
 
                 <input
                     type="file"
                     id="imageInput"
-                    accept="image/jpeg,image/png,image/webp,image/*"
+                    accept="image/*"
                     hidden
                 >
 
@@ -364,45 +467,18 @@
                 <input
                     type="file"
                     id="fileInput"
-                    accept="*/*"
                     hidden
                 >
 
 
-                <!-- CAMERA IMAGE INPUT FALLBACK -->
-
-                <input
-                    type="file"
-                    id="cameraInput"
-                    accept="image/*"
-                    capture="environment"
-                    hidden
-                >
-
-
-                <!-- VIDEO INPUT -->
-
-                <input
-                    type="file"
-                    id="videoInput"
-                    accept="video/*"
-                    capture="environment"
-                    hidden
-                >
-
-
-
-                <!-- TEXT INPUT -->
+                <!-- TEXT -->
 
                 <textarea
                     id="userInput"
                     rows="1"
-                    maxlength="12000"
                     placeholder="Message SwiftCortex AI..."
                     autocomplete="off"
-                    spellcheck="true"
                 ></textarea>
-
 
 
                 <!-- MICROPHONE -->
@@ -414,9 +490,8 @@
                     aria-label="Voice input"
                     title="Voice input"
                 >
-                    🎤
+                    🎙️
                 </button>
-
 
 
                 <!-- SEND -->
@@ -426,7 +501,6 @@
                     class="send-btn"
                     type="button"
                     aria-label="Send message"
-                    title="Send"
                 >
                     ➤
                 </button>
@@ -434,16 +508,11 @@
             </div>
 
 
-            <div
-                id="voiceStatus"
-                class="voice-status"
-                aria-live="polite"
-            ></div>
-
-
             <div class="composer-note">
+
                 SwiftCortex AI can make mistakes.
                 Check important information.
+
             </div>
 
         </footer>
@@ -453,10 +522,9 @@
 </div>
 
 
-
 <!-- =========================================================
      CAMERA MODAL
-========================================================== -->
+========================================================= -->
 
 <div
     id="cameraModal"
@@ -465,10 +533,10 @@
 
     <div class="modal-box camera-box">
 
-
         <div class="modal-header">
 
             <div>
+
                 <strong>
                     📷 Camera
                 </strong>
@@ -476,6 +544,7 @@
                 <small>
                     SwiftCortex AI
                 </small>
+
             </div>
 
 
@@ -488,7 +557,6 @@
             </button>
 
         </div>
-
 
 
         <!-- CAMERA MODE -->
@@ -513,7 +581,6 @@
             </button>
 
         </div>
-
 
 
         <!-- CAMERA SCREEN -->
@@ -549,7 +616,6 @@
             </div>
 
         </div>
-
 
 
         <!-- CAMERA CONTROLS -->
@@ -604,10 +670,125 @@
 </div>
 
 
+<!-- =========================================================
+     CUSTOMER SUPPORT CHAT
+========================================================= -->
+
+<div
+    id="supportModal"
+    class="modal"
+>
+
+    <div class="modal-box support-box">
+
+        <!-- SUPPORT HEADER -->
+
+        <div class="modal-header">
+
+            <div class="support-title">
+
+                <div class="support-avatar">
+                    💬
+                </div>
+
+
+                <div>
+
+                    <strong>
+                        Customer Support
+                    </strong>
+
+                    <small>
+                        🟢 SwiftCortex Support
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <button
+                id="supportClose"
+                class="close-btn"
+                type="button"
+            >
+                ✕
+            </button>
+
+        </div>
+
+
+        <!-- SUPPORT CHAT BOARD -->
+
+        <div
+            id="supportMessages"
+            class="support-messages"
+        >
+
+            <div
+                class="support-message support-agent"
+            >
+
+                <div class="support-message-name">
+                    🤖 SwiftCortex Support
+                </div>
+
+                <div class="support-message-text">
+                    Hello! 👋 Welcome to SwiftCortex AI Support.
+                    How can we help you today?
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- SUPPORT COMPOSER -->
+
+        <div class="support-composer">
+
+            <button
+                id="supportMic"
+                class="support-icon"
+                type="button"
+                title="Voice message"
+            >
+                🎙️
+            </button>
+
+
+            <textarea
+                id="supportInput"
+                rows="1"
+                placeholder="Message Customer Support..."
+                autocomplete="off"
+            ></textarea>
+
+
+            <button
+                id="supportSend"
+                class="support-send"
+                type="button"
+                aria-label="Send support message"
+            >
+                ➤
+            </button>
+
+        </div>
+
+
+        <div class="support-note">
+            SwiftCortex Support • We are here to help
+        </div>
+
+    </div>
+
+</div>
+
 
 <!-- =========================================================
      SETTINGS MODAL
-========================================================== -->
+========================================================= -->
 
 <div
     id="settingsModal"
@@ -616,10 +797,10 @@
 
     <div class="modal-box settings-box">
 
-
         <div class="modal-header">
 
             <div>
+
                 <strong>
                     ⚙️ Settings
                 </strong>
@@ -627,6 +808,7 @@
                 <small>
                     SwiftCortex AI preferences
                 </small>
+
             </div>
 
 
@@ -641,15 +823,13 @@
         </div>
 
 
-
         <div class="settings-list">
-
 
             <button
                 class="setting-item"
-                id="accountSetting"
                 type="button"
             >
+
                 <span>
                     👤 Account
                 </span>
@@ -657,14 +837,15 @@
                 <small>
                     Guest account
                 </small>
+
             </button>
 
 
             <button
                 class="setting-item"
-                id="memorySetting"
                 type="button"
             >
+
                 <span>
                     🧠 Memory
                 </span>
@@ -672,29 +853,31 @@
                 <small id="settingsMemory">
                     On
                 </small>
+
             </button>
 
 
             <button
                 class="setting-item"
-                id="appearanceSetting"
                 type="button"
             >
+
                 <span>
                     🌙 Appearance
                 </span>
 
-                <small id="appearanceStatus">
+                <small>
                     Dark
                 </small>
+
             </button>
 
 
             <button
                 class="setting-item"
-                id="languageSetting"
                 type="button"
             >
+
                 <span>
                     🌐 Language
                 </span>
@@ -702,14 +885,15 @@
                 <small>
                     Auto
                 </small>
+
             </button>
 
 
             <button
                 class="setting-item"
-                id="notificationSetting"
                 type="button"
             >
+
                 <span>
                     🔔 Notifications
                 </span>
@@ -717,14 +901,15 @@
                 <small>
                     Manage notifications
                 </small>
+
             </button>
 
 
             <button
                 class="setting-item"
-                id="subscriptionSetting"
                 type="button"
             >
+
                 <span>
                     💎 Subscription
                 </span>
@@ -732,14 +917,15 @@
                 <small>
                     Upgrade plan
                 </small>
+
             </button>
 
 
             <button
                 class="setting-item"
-                id="privacySetting"
                 type="button"
             >
+
                 <span>
                     🔒 Privacy
                 </span>
@@ -747,14 +933,15 @@
                 <small>
                     Privacy controls
                 </small>
+
             </button>
 
 
             <button
                 class="setting-item"
-                id="clearHistorySetting"
                 type="button"
             >
+
                 <span>
                     🗑️ Clear History
                 </span>
@@ -762,6 +949,7 @@
                 <small>
                     Remove recent chats
                 </small>
+
             </button>
 
         </div>
@@ -771,10 +959,9 @@
 </div>
 
 
-
 <!-- =========================================================
      PLUGINS MODAL
-========================================================== -->
+========================================================= -->
 
 <div
     id="pluginModal"
@@ -783,10 +970,10 @@
 
     <div class="modal-box plugin-box">
 
-
         <div class="modal-header">
 
             <div>
+
                 <strong>
                     🧩 Plugins
                 </strong>
@@ -794,6 +981,7 @@
                 <small>
                     SwiftCortex tools
                 </small>
+
             </div>
 
 
@@ -808,14 +996,13 @@
         </div>
 
 
-
         <div class="plugin-grid">
-
 
             <button
                 class="plugin-card"
                 type="button"
             >
+
                 🔎
 
                 <strong>
@@ -825,6 +1012,7 @@
                 <small>
                     Search the web
                 </small>
+
             </button>
 
 
@@ -832,6 +1020,7 @@
                 class="plugin-card"
                 type="button"
             >
+
                 🖼️
 
                 <strong>
@@ -841,6 +1030,7 @@
                 <small>
                     Generate images
                 </small>
+
             </button>
 
 
@@ -848,6 +1038,7 @@
                 class="plugin-card"
                 type="button"
             >
+
                 🎬
 
                 <strong>
@@ -857,6 +1048,7 @@
                 <small>
                     Generate videos
                 </small>
+
             </button>
 
 
@@ -864,6 +1056,7 @@
                 class="plugin-card"
                 type="button"
             >
+
                 💻
 
                 <strong>
@@ -873,6 +1066,7 @@
                 <small>
                     Developer tools
                 </small>
+
             </button>
 
 
@@ -880,6 +1074,7 @@
                 class="plugin-card"
                 type="button"
             >
+
                 📊
 
                 <strong>
@@ -889,6 +1084,7 @@
                 <small>
                     Analyze data
                 </small>
+
             </button>
 
 
@@ -896,6 +1092,7 @@
                 class="plugin-card"
                 type="button"
             >
+
                 🌐
 
                 <strong>
@@ -905,6 +1102,7 @@
                 <small>
                     Translate languages
                 </small>
+
             </button>
 
         </div>
@@ -914,10 +1112,9 @@
 </div>
 
 
-
 <!-- =========================================================
      PROFILE MODAL
-========================================================== -->
+========================================================= -->
 
 <div
     id="profileModal"
@@ -926,10 +1123,10 @@
 
     <div class="modal-box profile-box">
 
-
         <div class="modal-header">
 
             <div>
+
                 <strong>
                     👤 Account
                 </strong>
@@ -937,6 +1134,7 @@
                 <small>
                     SwiftCortex AI
                 </small>
+
             </div>
 
 
@@ -979,10 +1177,9 @@
 </div>
 
 
-
 <!-- =========================================================
-     VOICE / MICROPHONE SCRIPT SUPPORT
-========================================================== -->
+     SCRIPT
+========================================================= -->
 
 <script src="script.js"></script>
 
