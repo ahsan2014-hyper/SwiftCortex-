@@ -409,3 +409,89 @@ if(newChat){
 console.log(
  "⚡ SwiftCortex AI Ultra is ready"
 );
+async function sendMessage(){
+ if(sending)return;
+
+ const text=userInput.value.trim();
+ if(!text&&!selectedImage&&!selectedVideo&&!selectedFile)return;
+
+ sending=true;
+ sendBtn.disabled=true;
+
+ let att=null;
+
+ if(selectedImage)
+  att={type:"image",url:URL.createObjectURL(selectedImage)};
+ else if(selectedVideo)
+  att={type:"video",url:URL.createObjectURL(selectedVideo)};
+ else if(selectedFile)
+  att={type:"file",name:selectedFile.name};
+
+ addMessage(text||"📎 Attachment","user",att);
+
+ const ai=addMessage("Thinking...","ai");
+
+ try{
+  let image=null;
+
+  if(selectedImage)
+   image=await fileToBase64(selectedImage);
+
+  const r=await fetch("/api/gemini",{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({
+    message:text,
+    image:image,
+    thinkHarder:thinkHarder
+   })
+  });
+
+  const d=await r.json();
+
+  if(!r.ok)
+   throw new Error(d.error||"Server error: "+r.status);
+
+  ai.textContent=d.text||"No response from AI.";
+
+ }catch(e){
+  console.error(e);
+  ai.textContent="❌ Connection error: "+e.message;
+ }
+
+ clearAttachment();
+ userInput.value="";
+ resizeInput();
+
+ sending=false;
+ sendBtn.disabled=false;
+}
+function fileToBase64(file){
+ return new Promise((resolve,reject)=>{
+  const reader=new FileReader();
+
+  reader.onload=()=>{
+   resolve(reader.result);
+  };
+
+  reader.onerror=()=>{
+   reject(new Error("Could not read image"));
+  };
+
+  reader.readAsDataURL(file);
+}
+
+
+if(sendBtn){
+ sendBtn.addEventListener("click",sendMessage);
+}
+
+
+if(userInput){
+ userInput.addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&!e.shiftKey){
+   e.preventDefault();
+   sendMessage();
+  }
+ });
+}
