@@ -2,41 +2,12 @@
 
 /* =========================================================
    SwiftCortex AI Ultra
-   COMPLETE script.js
+   FINAL script.js
    API: /api/gemini
-
-   Features:
-   ✅ Normal Chat
-   ✅ Microphone / Voice Input
-   ✅ Enter to Send
-   ✅ New Chat
-   ✅ Chat History
-   ✅ Plus Menu
-   ✅ Camera
-   ✅ Front / Back Camera
-   ✅ Take Photo
-   ✅ Video Recording
-   ✅ Photos
-   ✅ Files
-   ✅ Image Preview
-   ✅ Video Preview
-   ✅ Image AI Analysis
-   ✅ Video First-Frame Analysis
-   ✅ Plugins
-   ✅ Think Harder
-   ✅ Memory
-   ✅ Settings
-   ✅ Theme
-   ✅ Clear History
-========================================================= */
-
-
-/* =========================================================
-   HELPER
 ========================================================= */
 
 const $ = id => document.getElementById(id);
-
+const $$ = selector => [...document.querySelectorAll(selector)];
 
 /* =========================================================
    ELEMENTS
@@ -54,7 +25,6 @@ const newTopChat = $("newTopChat");
 const messages = $("messages");
 const userInput = $("userInput");
 const sendBtn = $("sendBtn");
-
 const micBtn = $("micBtn");
 
 const imageInput = $("imageInput");
@@ -70,7 +40,6 @@ const thinkBtn = $("thinkBtn");
 const cameraModal = $("cameraModal");
 const cameraClose = $("cameraClose");
 const cameraVideo = $("cameraVideo");
-
 const cameraError = $("cameraError");
 const cameraErrorText = $("cameraErrorText");
 
@@ -104,7 +73,6 @@ const settingsMemory = $("settingsMemory");
 
 const historyList = $("historyList");
 
-
 /* =========================================================
    STATE
 ========================================================= */
@@ -122,169 +90,64 @@ let recordedChunks = [];
 let recordingSeconds = 0;
 let recordingTimer = null;
 
-let thinkHarder = false;
 let sending = false;
+let thinkHarder = false;
 
 let currentChat = [];
 
 let recognition = null;
 let isListening = false;
 
-let memoryEnabled =
-    localStorage.getItem("swift_memory") !== "off";
-
 let currentTheme =
     localStorage.getItem("swift_theme") || "dark";
 
+let memoryEnabled =
+    localStorage.getItem("swift_memory") !== "off";
 
 /* =========================================================
-   INITIALIZE
+   SAFE JSON
 ========================================================= */
 
-document.addEventListener("DOMContentLoaded", () => {
+async function readResponse(response) {
 
-    applyTheme();
+    const text = await response.text();
 
-    updateMemoryUI();
+    let data = null;
 
-    renderHistory();
-
-    setupSpeechRecognition();
-
-    setupTextarea();
-
-    setupModals();
-
-});
-
-
-/* =========================================================
-   THEME
-========================================================= */
-
-function applyTheme() {
-
-    document.documentElement.dataset.theme =
-        currentTheme;
-
-    document.body.dataset.theme =
-        currentTheme;
-
-    if (!themeBtn) return;
-
-    if (currentTheme === "dark") {
-
-        themeBtn.innerHTML =
-            "🌙 <span>Dark Mode</span>";
-
-    } else if (currentTheme === "light") {
-
-        themeBtn.innerHTML =
-            "☀️ <span>Light Mode</span>";
-
-    } else {
-
-        themeBtn.innerHTML =
-            "🖥️ <span>System</span>";
-
+    try {
+        data = text ? JSON.parse(text) : {};
+    } catch {
+        data = {
+            raw: text
+        };
     }
 
+    return {
+        ok: response.ok,
+        status: response.status,
+        data
+    };
 }
 
-
-themeBtn?.addEventListener("click", () => {
-
-    if (currentTheme === "dark") {
-
-        currentTheme = "light";
-
-    } else if (currentTheme === "light") {
-
-        currentTheme = "system";
-
-    } else {
-
-        currentTheme = "dark";
-
-    }
-
-    localStorage.setItem(
-        "swift_theme",
-        currentTheme
-    );
-
-    applyTheme();
-
-});
-
-
 /* =========================================================
-   MEMORY
-========================================================= */
-
-function updateMemoryUI() {
-
-    if (memoryStatus) {
-
-        memoryStatus.textContent =
-            memoryEnabled ? "ON" : "OFF";
-
-    }
-
-    if (settingsMemory) {
-
-        settingsMemory.textContent =
-            memoryEnabled ? "On" : "Off";
-
-    }
-
-}
-
-
-memoryBtn?.addEventListener("click", () => {
-
-    memoryEnabled =
-        !memoryEnabled;
-
-    localStorage.setItem(
-        "swift_memory",
-        memoryEnabled ? "on" : "off"
-    );
-
-    updateMemoryUI();
-
-});
-
-
-/* =========================================================
-   HISTORY
+   STORAGE
 ========================================================= */
 
 function getHistory() {
 
     try {
-
         return JSON.parse(
-            localStorage.getItem(
-                "swift_history"
-            ) || "[]"
+            localStorage.getItem("swift_history") || "[]"
         );
-
     } catch {
-
         return [];
-
     }
-
 }
-
 
 function saveHistory(history) {
 
     if (
-        localStorage.getItem(
-            "swift_save_history"
-        ) === "off"
+        localStorage.getItem("swift_save_history") === "off"
     ) {
         return;
     }
@@ -293,112 +156,75 @@ function saveHistory(history) {
         "swift_history",
         JSON.stringify(history)
     );
-
 }
 
-
-function saveCurrentMessage(
-    text,
-    type
-) {
+function saveCurrentMessage(text, type) {
 
     if (
-        localStorage.getItem(
-            "swift_save_history"
-        ) === "off"
+        localStorage.getItem("swift_save_history") === "off"
     ) {
         return;
     }
 
     currentChat.push({
-
         text: text || "",
-
         type,
-
         time: Date.now()
-
     });
-
 }
-
 
 function saveCurrentChat() {
 
-    if (!currentChat.length) {
-        return;
-    }
+    if (!currentChat.length) return;
 
     if (
-        localStorage.getItem(
-            "swift_save_history"
-        ) === "off"
+        localStorage.getItem("swift_save_history") === "off"
     ) {
         return;
     }
 
-    const history =
-        getHistory();
+    const history = getHistory();
 
-    const firstUser =
+    const firstUserMessage =
         currentChat.find(
-            item =>
-                item.type === "user"
+            item => item.type === "user"
         );
 
     const title =
-        firstUser?.text?.trim()?.slice(
-            0,
-            45
-        ) ||
+        firstUserMessage?.text?.trim()?.slice(0, 40) ||
         "New Chat";
 
     history.unshift({
-
         id: Date.now(),
-
         title,
-
         messages: currentChat
-
     });
 
-    saveHistory(
-        history.slice(0, 50)
-    );
-
+    saveHistory(history.slice(0, 50));
     renderHistory();
-
 }
 
+/* =========================================================
+   HISTORY
+========================================================= */
 
 function renderHistory() {
 
-    if (!historyList) {
-        return;
-    }
+    if (!historyList) return;
+
+    const history = getHistory();
 
     historyList.innerHTML = "";
-
-    const history =
-        getHistory();
 
     if (!history.length) {
 
         const empty =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
-        empty.className =
-            "history-empty";
+        empty.className = "history-empty";
+        empty.textContent = "No recent chats";
 
-        empty.textContent =
-            "No recent chats";
-
-        historyList.appendChild(
-            empty
-        );
+        historyList.appendChild(empty);
 
         return;
     }
@@ -406,87 +232,56 @@ function renderHistory() {
     history.forEach(chat => {
 
         const button =
-            document.createElement(
-                "button"
-            );
+            document.createElement("button");
 
-        button.className =
-            "history-item";
+        button.className = "history-item";
 
-        button.type =
-            "button";
+        button.type = "button";
 
         button.textContent =
-            chat.title ||
-            "New Chat";
+            chat.title || "New Chat";
 
         button.addEventListener(
             "click",
-            () => {
-
-                loadHistoryChat(
-                    chat.id
-                );
-
-            }
+            () => loadHistoryChat(chat.id)
         );
 
-        historyList.appendChild(
-            button
-        );
-
+        historyList.appendChild(button);
     });
-
 }
-
 
 function loadHistoryChat(id) {
 
-    const history =
-        getHistory();
+    const history = getHistory();
 
     const chat =
-        history.find(
-            item =>
-                item.id === id
-        );
+        history.find(item => item.id === id);
 
-    if (!chat) {
-        return;
-    }
+    if (!chat) return;
 
     currentChat =
         Array.isArray(chat.messages)
             ? [...chat.messages]
             : [];
 
-    if (!messages) {
-        return;
-    }
+    if (!messages) return;
 
     messages.innerHTML = "";
 
-    currentChat.forEach(
-        item => {
+    currentChat.forEach(message => {
 
-            addMessage(
-                item.text,
-                item.type,
-                null,
-                false
-            );
+        addMessage(
+            message.text,
+            message.type,
+            null,
+            false
+        );
+    });
 
-        }
-    );
-
-    sidebar?.classList.remove(
-        "open"
-    );
+    sidebar?.classList.remove("open");
 
     userInput?.focus();
-
 }
-
 
 /* =========================================================
    CHAT UI
@@ -494,37 +289,26 @@ function loadHistoryChat(id) {
 
 function scrollChat() {
 
-    if (!messages) {
-        return;
-    }
+    if (!messages) return;
 
     requestAnimationFrame(() => {
-
         messages.scrollTop =
             messages.scrollHeight;
-
     });
-
 }
-
 
 function removeWelcome() {
 
     messages
         ?.querySelector(".welcome")
         ?.remove();
-
 }
-
 
 function showWelcome() {
 
-    if (!messages) {
-        return;
-    }
+    if (!messages) return;
 
     messages.innerHTML = `
-
         <div class="welcome">
 
             <div class="welcome-logo">
@@ -543,37 +327,30 @@ function showWelcome() {
             <div class="quick-actions">
 
                 <button
-                    data-prompt="Tell me today's latest news"
-                >
+                    data-prompt="Tell me today's latest news">
                     📰 Latest News
                 </button>
 
                 <button
-                    data-prompt="Help me write something"
-                >
+                    data-prompt="Help me write something">
                     ✍️ Write
                 </button>
 
                 <button
-                    data-prompt="Explain something to me"
-                >
+                    data-prompt="Explain something to me">
                     💡 Explain
                 </button>
 
                 <button
-                    data-prompt="Help me with coding"
-                >
+                    data-prompt="Help me with coding">
                     💻 Coding
                 </button>
 
             </div>
 
         </div>
-
     `;
-
 }
-
 
 function addMessage(
     text,
@@ -582,16 +359,12 @@ function addMessage(
     save = true
 ) {
 
-    if (!messages) {
-        return null;
-    }
+    if (!messages) return null;
 
     removeWelcome();
 
     const box =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     box.className =
         type === "user"
@@ -601,20 +374,13 @@ function addMessage(
     if (text) {
 
         const textBox =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
-        textBox.className =
-            "message-text";
+        textBox.className = "message-text";
 
-        textBox.textContent =
-            text;
+        textBox.textContent = text;
 
-        box.appendChild(
-            textBox
-        );
-
+        box.appendChild(textBox);
     }
 
     if (
@@ -622,23 +388,13 @@ function addMessage(
     ) {
 
         const img =
-            document.createElement(
-                "img"
-            );
+            document.createElement("img");
 
-        img.src =
-            attachment.url;
+        img.src = attachment.url;
+        img.alt = "Uploaded image";
+        img.loading = "lazy";
 
-        img.alt =
-            "Uploaded image";
-
-        img.loading =
-            "lazy";
-
-        box.appendChild(
-            img
-        );
-
+        box.appendChild(img);
     }
 
     if (
@@ -646,26 +402,14 @@ function addMessage(
     ) {
 
         const video =
-            document.createElement(
-                "video"
-            );
+            document.createElement("video");
 
-        video.src =
-            attachment.url;
+        video.src = attachment.url;
+        video.controls = true;
+        video.playsInline = true;
+        video.preload = "metadata";
 
-        video.controls =
-            true;
-
-        video.playsInline =
-            true;
-
-        video.preload =
-            "metadata";
-
-        box.appendChild(
-            video
-        );
-
+        box.appendChild(video);
     }
 
     if (
@@ -673,26 +417,17 @@ function addMessage(
     ) {
 
         const fileBox =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
-        fileBox.className =
-            "message-file";
+        fileBox.className = "message-file";
 
         fileBox.textContent =
-            "📄 " +
-            attachment.name;
+            "📄 " + attachment.name;
 
-        box.appendChild(
-            fileBox
-        );
-
+        box.appendChild(fileBox);
     }
 
-    messages.appendChild(
-        box
-    );
+    messages.appendChild(box);
 
     scrollChat();
 
@@ -702,13 +437,10 @@ function addMessage(
             text || "",
             type
         );
-
     }
 
     return box;
-
 }
-
 
 /* =========================================================
    TYPING
@@ -718,51 +450,52 @@ function showTyping() {
 
     removeTyping();
 
-    if (!messages) {
-        return;
-    }
+    if (!messages) return;
 
     const box =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
-    box.id =
-        "swiftTyping";
-
-    box.className =
-        "ai-message";
+    box.id = "swiftTyping";
+    box.className = "ai-message";
 
     const text =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
-    text.className =
-        "message-text";
-
+    text.className = "message-text";
     text.textContent =
         "SwiftCortex is thinking…";
 
-    box.appendChild(
-        text
-    );
-
-    messages.appendChild(
-        box
-    );
+    box.appendChild(text);
+    messages.appendChild(box);
 
     scrollChat();
-
 }
-
 
 function removeTyping() {
-
     $("swiftTyping")?.remove();
-
 }
 
+/* =========================================================
+   INPUT SIZE
+========================================================= */
+
+function resizeInput() {
+
+    if (!userInput) return;
+
+    userInput.style.height = "auto";
+
+    userInput.style.height =
+        Math.min(
+            userInput.scrollHeight,
+            180
+        ) + "px";
+}
+
+userInput?.addEventListener(
+    "input",
+    resizeInput
+);
 
 /* =========================================================
    PLUS MENU
@@ -774,23 +507,16 @@ plusBtn?.addEventListener(
 
         event.stopPropagation();
 
-        plusMenu?.classList.toggle(
-            "show"
-        );
-
+        plusMenu?.classList.toggle("show");
     }
 );
-
 
 plusMenu?.addEventListener(
     "click",
     event => {
-
         event.stopPropagation();
-
     }
 );
-
 
 document.addEventListener(
     "click",
@@ -798,33 +524,21 @@ document.addEventListener(
 
         if (
             plusMenu &&
-            !plusMenu.contains(
-                event.target
-            ) &&
+            !plusMenu.contains(event.target) &&
             event.target !== plusBtn
         ) {
 
-            plusMenu.classList.remove(
-                "show"
-            );
-
+            plusMenu.classList.remove("show");
         }
-
     }
 );
 
-
 function closePlus() {
-
-    plusMenu?.classList.remove(
-        "show"
-    );
-
+    plusMenu?.classList.remove("show");
 }
 
-
 /* =========================================================
-   MOBILE SIDEBAR
+   SIDEBAR
 ========================================================= */
 
 menuBtn?.addEventListener(
@@ -833,13 +547,9 @@ menuBtn?.addEventListener(
 
         event.stopPropagation();
 
-        sidebar?.classList.toggle(
-            "open"
-        );
-
+        sidebar?.classList.toggle("open");
     }
 );
-
 
 document.addEventListener(
     "click",
@@ -847,24 +557,15 @@ document.addEventListener(
 
         if (
             window.innerWidth <= 800 &&
-            sidebar?.classList.contains(
-                "open"
-            ) &&
-            !sidebar.contains(
-                event.target
-            ) &&
+            sidebar?.classList.contains("open") &&
+            !sidebar.contains(event.target) &&
             event.target !== menuBtn
         ) {
 
-            sidebar.classList.remove(
-                "open"
-            );
-
+            sidebar.classList.remove("open");
         }
-
     }
 );
-
 
 /* =========================================================
    NEW CHAT
@@ -873,43 +574,33 @@ document.addEventListener(
 function startNewChat() {
 
     if (currentChat.length) {
-
         saveCurrentChat();
-
     }
 
     currentChat = [];
 
     clearAttachment();
-
     removeTyping();
 
     showWelcome();
 
     userInput?.focus();
-
 }
-
 
 newChat?.addEventListener(
     "click",
     () => {
 
-        sidebar?.classList.remove(
-            "open"
-        );
+        sidebar?.classList.remove("open");
 
         startNewChat();
-
     }
 );
-
 
 newTopChat?.addEventListener(
     "click",
     startNewChat
 );
-
 
 /* =========================================================
    QUICK ACTIONS
@@ -920,325 +611,69 @@ document.addEventListener(
     event => {
 
         const button =
-            event.target.closest(
-                "[data-prompt]"
-            );
+            event.target.closest("[data-prompt]");
 
-        if (!button) {
-            return;
+        if (!button) return;
+
+        if (userInput) {
+
+            userInput.value =
+                button.dataset.prompt;
+
+            resizeInput();
+
+            userInput.focus();
         }
-
-        if (!userInput) {
-            return;
-        }
-
-        userInput.value =
-            button.dataset.prompt;
-
-        resizeInput();
-
-        userInput.focus();
-
     }
 );
-
-
-/* =========================================================
-   TEXTAREA
-========================================================= */
-
-function resizeInput() {
-
-    if (!userInput) {
-        return;
-    }
-
-    userInput.style.height =
-        "auto";
-
-    userInput.style.height =
-        Math.min(
-            userInput.scrollHeight,
-            180
-        ) + "px";
-
-}
-
-
-function setupTextarea() {
-
-    if (!userInput) {
-        return;
-    }
-
-    userInput.addEventListener(
-        "input",
-        resizeInput
-    );
-
-    userInput.addEventListener(
-        "keydown",
-        event => {
-
-            if (
-                event.key === "Enter" &&
-                !event.shiftKey
-            ) {
-
-                event.preventDefault();
-
-                sendMessage();
-
-            }
-
-        }
-    );
-
-}
-
-
-/* =========================================================
-   IMAGE UPLOAD
-========================================================= */
-
-photoBtn?.addEventListener(
-    "click",
-    () => {
-
-        closePlus();
-
-        if (!imageInput) {
-            return;
-        }
-
-        imageInput.value =
-            "";
-
-        imageInput.click();
-
-    }
-);
-
-
-imageInput?.addEventListener(
-    "change",
-    () => {
-
-        const file =
-            imageInput.files?.[0];
-
-        if (!file) {
-            return;
-        }
-
-        if (
-            !file.type.startsWith(
-                "image/"
-            )
-        ) {
-
-            alert(
-                "Please select an image."
-            );
-
-            return;
-        }
-
-        selectedImage =
-            file;
-
-        selectedVideo =
-            null;
-
-        selectedFile =
-            null;
-
-        showAttachment(
-            file,
-            "image"
-        );
-
-    }
-);
-
-
-/* =========================================================
-   FILE UPLOAD
-========================================================= */
-
-fileBtn?.addEventListener(
-    "click",
-    () => {
-
-        closePlus();
-
-        if (!fileInput) {
-            return;
-        }
-
-        fileInput.value =
-            "";
-
-        fileInput.click();
-
-    }
-);
-
-
-fileInput?.addEventListener(
-    "change",
-    () => {
-
-        const file =
-            fileInput.files?.[0];
-
-        if (!file) {
-            return;
-        }
-
-        if (
-            file.type.startsWith(
-                "image/"
-            )
-        ) {
-
-            selectedImage =
-                file;
-
-            selectedVideo =
-                null;
-
-            selectedFile =
-                null;
-
-            showAttachment(
-                file,
-                "image"
-            );
-
-            return;
-        }
-
-        if (
-            file.type.startsWith(
-                "video/"
-            )
-        ) {
-
-            selectedVideo =
-                file;
-
-            selectedImage =
-                null;
-
-            selectedFile =
-                null;
-
-            showAttachment(
-                file,
-                "video"
-            );
-
-            return;
-        }
-
-        selectedFile =
-            file;
-
-        selectedImage =
-            null;
-
-        selectedVideo =
-            null;
-
-        showAttachment(
-            file,
-            "file"
-        );
-
-    }
-);
-
 
 /* =========================================================
    ATTACHMENT PREVIEW
 ========================================================= */
 
-function showAttachment(
-    file,
-    type
-) {
+function showAttachment(file, type) {
 
-    if (!imagePreview) {
-        return;
-    }
+    if (!imagePreview) return;
 
-    imagePreview.innerHTML =
-        "";
+    imagePreview.innerHTML = "";
 
     const box =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
-    box.className =
-        "attachment-box";
+    box.className = "attachment-box";
 
     if (type === "image") {
 
         const img =
-            document.createElement(
-                "img"
-            );
+            document.createElement("img");
 
         img.src =
-            URL.createObjectURL(
-                file
-            );
+            URL.createObjectURL(file);
 
-        img.alt =
-            file.name;
+        img.alt = file.name;
 
-        box.appendChild(
-            img
-        );
-
+        box.appendChild(img);
     }
 
     if (type === "video") {
 
         const video =
-            document.createElement(
-                "video"
-            );
+            document.createElement("video");
 
         video.src =
-            URL.createObjectURL(
-                file
-            );
+            URL.createObjectURL(file);
 
-        video.controls =
-            true;
+        video.controls = true;
+        video.muted = true;
+        video.playsInline = true;
 
-        video.muted =
-            true;
-
-        video.playsInline =
-            true;
-
-        box.appendChild(
-            video
-        );
-
+        box.appendChild(video);
     }
 
     const name =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
-    name.className =
-        "attachment-name";
+    name.className = "attachment-name";
 
     name.textContent =
         type === "image"
@@ -1247,68 +682,133 @@ function showAttachment(
                 ? "🎥 " + file.name
                 : "📄 " + file.name;
 
-    box.appendChild(
-        name
-    );
+    box.appendChild(name);
 
     const remove =
-        document.createElement(
-            "button"
-        );
-
-    remove.type =
-        "button";
+        document.createElement("button");
 
     remove.className =
         "attachment-remove";
 
-    remove.textContent =
-        "✕";
+    remove.type = "button";
+    remove.textContent = "✕";
 
     remove.addEventListener(
         "click",
         clearAttachment
     );
 
-    box.appendChild(
-        remove
-    );
+    box.appendChild(remove);
 
-    imagePreview.appendChild(
-        box
-    );
-
+    imagePreview.appendChild(box);
 }
-
 
 function clearAttachment() {
 
-    selectedImage =
-        null;
+    selectedImage = null;
+    selectedVideo = null;
+    selectedFile = null;
 
-    selectedVideo =
-        null;
+    if (imageInput)
+        imageInput.value = "";
 
-    selectedFile =
-        null;
+    if (fileInput)
+        fileInput.value = "";
 
-    if (imageInput) {
-        imageInput.value =
-            "";
-    }
-
-    if (fileInput) {
-        fileInput.value =
-            "";
-    }
-
-    if (imagePreview) {
-        imagePreview.innerHTML =
-            "";
-    }
-
+    if (imagePreview)
+        imagePreview.innerHTML = "";
 }
 
+/* =========================================================
+   PHOTO
+========================================================= */
+
+photoBtn?.addEventListener(
+    "click",
+    () => {
+
+        closePlus();
+
+        imageInput?.click();
+    }
+);
+
+imageInput?.addEventListener(
+    "change",
+    () => {
+
+        const file =
+            imageInput.files?.[0];
+
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+
+            alert("Please select an image.");
+
+            return;
+        }
+
+        selectedImage = file;
+        selectedVideo = null;
+        selectedFile = null;
+
+        showAttachment(file, "image");
+    }
+);
+
+/* =========================================================
+   FILES
+========================================================= */
+
+fileBtn?.addEventListener(
+    "click",
+    () => {
+
+        closePlus();
+
+        fileInput?.click();
+    }
+);
+
+fileInput?.addEventListener(
+    "change",
+    () => {
+
+        const file =
+            fileInput.files?.[0];
+
+        if (!file) return;
+
+        if (file.type.startsWith("image/")) {
+
+            selectedImage = file;
+            selectedVideo = null;
+            selectedFile = null;
+
+            showAttachment(file, "image");
+
+            return;
+        }
+
+        if (file.type.startsWith("video/")) {
+
+            selectedVideo = file;
+            selectedImage = null;
+            selectedFile = null;
+
+            showAttachment(file, "video");
+
+            return;
+        }
+
+        selectedFile = file;
+        selectedImage = null;
+        selectedVideo = null;
+
+        showAttachment(file, "file");
+    }
+);
 
 /* =========================================================
    CAMERA
@@ -1320,23 +820,18 @@ cameraBtn?.addEventListener(
 
         closePlus();
 
-        cameraModal?.classList.add(
-            "show"
-        );
+        cameraModal?.classList.add("show");
 
         setPhotoMode();
 
         await startCamera();
-
     }
 );
-
 
 cameraClose?.addEventListener(
     "click",
     closeCamera
 );
-
 
 async function startCamera() {
 
@@ -1360,22 +855,12 @@ async function startCamera() {
             await navigator.mediaDevices.getUserMedia({
 
                 video: {
-
-                    facingMode:
-                        cameraFacing,
-
-                    width: {
-                        ideal: 1280
-                    },
-
-                    height: {
-                        ideal: 720
-                    }
-
+                    facingMode: cameraFacing,
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
                 },
 
                 audio: true
-
             });
 
         if (cameraVideo) {
@@ -1383,97 +868,56 @@ async function startCamera() {
             cameraVideo.srcObject =
                 cameraStream;
 
-            cameraVideo.muted =
-                true;
+            cameraVideo.muted = true;
 
             await cameraVideo.play();
-
         }
 
-        cameraError?.classList.remove(
-            "show"
-        );
+        cameraError?.classList.remove("show");
 
     } catch (error) {
 
-        console.error(
-            "Camera error:",
-            error
-        );
+        console.error("Camera error:", error);
 
         showCameraError(
-            cameraErrorMessage(
-                error
-            )
+            getCameraError(error)
         );
-
     }
-
 }
 
-
-function showCameraError(
-    message
-) {
-
-    cameraError?.classList.add(
-        "show"
-    );
-
-    if (cameraErrorText) {
-
-        cameraErrorText.textContent =
-            message;
-
-    }
-
-}
-
-
-function cameraErrorMessage(
-    error
-) {
+function getCameraError(error) {
 
     if (
-        error?.name ===
-        "NotAllowedError"
+        error?.name === "NotAllowedError"
     ) {
 
-        return (
-            "Camera permission was denied. " +
-            "Allow camera access in your browser settings."
-        );
-
+        return "Camera permission was denied. Please allow camera access.";
     }
 
     if (
-        error?.name ===
-        "NotFoundError"
+        error?.name === "NotFoundError"
     ) {
 
-        return (
-            "No camera was found on this device."
-        );
-
+        return "No camera was found on this device.";
     }
 
     if (
-        error?.name ===
-        "NotReadableError"
+        error?.name === "NotReadableError"
     ) {
 
-        return (
-            "The camera is being used by another application."
-        );
-
+        return "The camera is being used by another application.";
     }
 
-    return (
-        "Unable to access the camera."
-    );
-
+    return "Unable to access the camera.";
 }
 
+function showCameraError(text) {
+
+    cameraError?.classList.add("show");
+
+    if (cameraErrorText)
+        cameraErrorText.textContent = text;
+}
 
 function stopCamera() {
 
@@ -1481,41 +925,25 @@ function stopCamera() {
 
         cameraStream
             .getTracks()
-            .forEach(
-                track =>
-                    track.stop()
-            );
+            .forEach(track => track.stop());
 
-        cameraStream =
-            null;
-
+        cameraStream = null;
     }
 
-    if (cameraVideo) {
-
-        cameraVideo.srcObject =
-            null;
-
-    }
-
+    if (cameraVideo)
+        cameraVideo.srcObject = null;
 }
-
 
 function closeCamera() {
 
     stopRecording();
-
     stopCamera();
 
-    cameraModal?.classList.remove(
-        "show"
-    );
-
+    cameraModal?.classList.remove("show");
 }
 
-
 /* =========================================================
-   SWITCH CAMERA
+   CAMERA SWITCH
 ========================================================= */
 
 switchCamera?.addEventListener(
@@ -1524,10 +952,8 @@ switchCamera?.addEventListener(
 
         if (
             recorder &&
-            recorder.state !==
-                "inactive"
+            recorder.state !== "inactive"
         ) {
-
             return;
         }
 
@@ -1537,10 +963,8 @@ switchCamera?.addEventListener(
                 : "user";
 
         await startCamera();
-
     }
 );
-
 
 /* =========================================================
    PHOTO MODE
@@ -1552,51 +976,28 @@ photoMode?.addEventListener(
 
         setPhotoMode();
 
-        if (
-            !cameraStream
-        ) {
-
+        if (!cameraStream)
             await startCamera();
-
-        }
-
     }
 );
 
-
 function setPhotoMode() {
 
-    photoMode?.classList.add(
-        "active"
-    );
+    photoMode?.classList.add("active");
+    videoMode?.classList.remove("active");
 
-    videoMode?.classList.remove(
-        "active"
-    );
+    if (takePhoto)
+        takePhoto.style.display = "inline-block";
 
-    if (takePhoto) {
+    if (startRecord)
+        startRecord.style.display = "none";
 
-        takePhoto.style.display =
-            "inline-block";
+    if (stopRecord)
+        stopRecord.style.display = "none";
 
-    }
-
-    if (startRecord) {
-
-        startRecord.style.display =
-            "none";
-
-    }
-
-    if (stopRecord) {
-
-        stopRecord.style.display =
-            "none";
-
-    }
-
+    if (recordTime)
+        recordTime.style.display = "none";
 }
-
 
 /* =========================================================
    TAKE PHOTO
@@ -1604,91 +1005,69 @@ function setPhotoMode() {
 
 takePhoto?.addEventListener(
     "click",
-    takeCameraPhoto
-);
+    () => {
 
+        if (!cameraVideo || !cameraStream) {
 
-function takeCameraPhoto() {
-
-    if (
-        !cameraVideo ||
-        !cameraStream
-    ) {
-
-        showCameraError(
-            "Camera is not ready."
-        );
-
-        return;
-
-    }
-
-    const canvas =
-        document.createElement(
-            "canvas"
-        );
-
-    canvas.width =
-        cameraVideo.videoWidth ||
-        1280;
-
-    canvas.height =
-        cameraVideo.videoHeight ||
-        720;
-
-    const ctx =
-        canvas.getContext(
-            "2d"
-        );
-
-    ctx.drawImage(
-        cameraVideo,
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-    canvas.toBlob(
-        blob => {
-
-            if (!blob) {
-                return;
-            }
-
-            const file =
-                new File(
-                    [blob],
-                    `camera-${Date.now()}.jpg`,
-                    {
-                        type:
-                            "image/jpeg"
-                    }
-                );
-
-            selectedImage =
-                file;
-
-            selectedVideo =
-                null;
-
-            selectedFile =
-                null;
-
-            showAttachment(
-                file,
-                "image"
+            showCameraError(
+                "Camera is not ready."
             );
 
-            closeCamera();
+            return;
+        }
 
-        },
-        "image/jpeg",
-        0.9
-    );
+        const canvas =
+            document.createElement("canvas");
 
-}
+        canvas.width =
+            cameraVideo.videoWidth ||
+            1280;
 
+        canvas.height =
+            cameraVideo.videoHeight ||
+            720;
+
+        const ctx =
+            canvas.getContext("2d");
+
+        ctx.drawImage(
+            cameraVideo,
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+        canvas.toBlob(
+            blob => {
+
+                if (!blob) return;
+
+                const file =
+                    new File(
+                        [blob],
+                        "swiftcortex-photo.jpg",
+                        {
+                            type: "image/jpeg"
+                        }
+                    );
+
+                selectedImage = file;
+                selectedVideo = null;
+                selectedFile = null;
+
+                showAttachment(
+                    file,
+                    "image"
+                );
+
+                closeCamera();
+            },
+            "image/jpeg",
+            0.92
+        );
+    }
+);
 
 /* =========================================================
    VIDEO MODE
@@ -1700,51 +1079,28 @@ videoMode?.addEventListener(
 
         setVideoMode();
 
-        if (
-            !cameraStream
-        ) {
-
+        if (!cameraStream)
             await startCamera();
-
-        }
-
     }
 );
 
-
 function setVideoMode() {
 
-    photoMode?.classList.remove(
-        "active"
-    );
+    videoMode?.classList.add("active");
+    photoMode?.classList.remove("active");
 
-    videoMode?.classList.add(
-        "active"
-    );
+    if (takePhoto)
+        takePhoto.style.display = "none";
 
-    if (takePhoto) {
+    if (startRecord)
+        startRecord.style.display = "inline-block";
 
-        takePhoto.style.display =
-            "none";
+    if (stopRecord)
+        stopRecord.style.display = "none";
 
-    }
-
-    if (startRecord) {
-
-        startRecord.style.display =
-            "inline-block";
-
-    }
-
-    if (stopRecord) {
-
-        stopRecord.style.display =
-            "none";
-
-    }
-
+    if (recordTime)
+        recordTime.style.display = "block";
 }
-
 
 /* =========================================================
    VIDEO RECORDING
@@ -1752,29 +1108,17 @@ function setVideoMode() {
 
 startRecord?.addEventListener(
     "click",
-    startVideoRecording
+    startRecording
 );
-
 
 stopRecord?.addEventListener(
     "click",
     stopRecording
 );
 
+function startRecording() {
 
-function startVideoRecording() {
-
-    if (
-        !cameraStream
-    ) {
-
-        showCameraError(
-            "Camera is not ready."
-        );
-
-        return;
-
-    }
+    if (!cameraStream) return;
 
     if (
         !window.MediaRecorder
@@ -1785,56 +1129,39 @@ function startVideoRecording() {
         );
 
         return;
-
     }
 
     recordedChunks = [];
 
-    let mimeType =
-        "";
+    let mimeType = "";
 
-    const formats = [
-
+    const types = [
         "video/webm;codecs=vp9",
-
         "video/webm;codecs=vp8",
-
-        "video/webm"
-
+        "video/webm",
+        "video/mp4"
     ];
 
-    for (
-        const format of formats
-    ) {
+    for (const type of types) {
 
         if (
-            MediaRecorder.isTypeSupported(
-                format
-            )
+            MediaRecorder.isTypeSupported(type)
         ) {
 
-            mimeType =
-                format;
-
+            mimeType = type;
             break;
-
         }
-
     }
 
     try {
 
         recorder =
-            mimeType
-                ? new MediaRecorder(
-                    cameraStream,
-                    {
-                        mimeType
-                    }
-                )
-                : new MediaRecorder(
-                    cameraStream
-                );
+            new MediaRecorder(
+                cameraStream,
+                mimeType
+                    ? { mimeType }
+                    : undefined
+            );
 
     } catch (error) {
 
@@ -1845,34 +1172,21 @@ function startVideoRecording() {
         );
 
         return;
-
     }
 
     recorder.ondataavailable =
         event => {
 
-            if (
-                event.data &&
-                event.data.size > 0
-            ) {
-
-                recordedChunks.push(
-                    event.data
-                );
-
-            }
-
+            if (event.data?.size)
+                recordedChunks.push(event.data);
         };
 
     recorder.onstop =
-        saveRecordedVideo;
+        finishRecording;
 
-    recorder.start(
-        250
-    );
+    recorder.start();
 
-    recordingSeconds =
-        0;
+    recordingSeconds = 0;
 
     updateRecordTime();
 
@@ -1888,22 +1202,12 @@ function startVideoRecording() {
             1000
         );
 
-    if (startRecord) {
+    if (startRecord)
+        startRecord.style.display = "none";
 
-        startRecord.style.display =
-            "none";
-
-    }
-
-    if (stopRecord) {
-
-        stopRecord.style.display =
-            "inline-block";
-
-    }
-
+    if (stopRecord)
+        stopRecord.style.display = "inline-block";
 }
-
 
 function stopRecording() {
 
@@ -1915,102 +1219,75 @@ function stopRecording() {
             recordingTimer
         );
 
-        recordingTimer =
-            null;
-
+        recordingTimer = null;
     }
 
     if (
         recorder &&
-        recorder.state !==
-            "inactive"
+        recorder.state !== "inactive"
     ) {
 
         recorder.stop();
-
     }
 
-    if (startRecord) {
-
+    if (startRecord)
         startRecord.style.display =
-            "inline-block";
+            videoMode?.classList.contains("active")
+                ? "inline-block"
+                : "none";
 
-    }
-
-    if (stopRecord) {
-
-        stopRecord.style.display =
-            "none";
-
-    }
-
+    if (stopRecord)
+        stopRecord.style.display = "none";
 }
-
 
 function updateRecordTime() {
 
-    if (!recordTime) {
-        return;
-    }
+    if (!recordTime) return;
 
     const minutes =
         String(
-            Math.floor(
-                recordingSeconds / 60
-            )
-        ).padStart(
-            2,
-            "0"
-        );
+            Math.floor(recordingSeconds / 60)
+        ).padStart(2, "0");
 
     const seconds =
         String(
             recordingSeconds % 60
-        ).padStart(
-            2,
-            "0"
-        );
+        ).padStart(2, "0");
 
     recordTime.textContent =
         `🔴 ${minutes}:${seconds}`;
-
 }
 
+function finishRecording() {
 
-function saveRecordedVideo() {
-
-    if (!recordedChunks.length) {
+    if (!recordedChunks.length)
         return;
-    }
+
+    const mime =
+        recorder?.mimeType ||
+        "video/webm";
 
     const blob =
         new Blob(
             recordedChunks,
-            {
-                type:
-                    recorder?.mimeType ||
-                    "video/webm"
-            }
+            { type: mime }
         );
+
+    const extension =
+        mime.includes("mp4")
+            ? "mp4"
+            : "webm";
 
     const file =
         new File(
             [blob],
-            `video-${Date.now()}.webm`,
-            {
-                type:
-                    blob.type
-            }
+            `swiftcortex-video.${extension}`,
+            { type: mime }
         );
 
-    selectedVideo =
-        file;
-
-    selectedImage =
-        null;
-
-    selectedFile =
-        null;
+    selectedVideo = file;
+    selectedImage = null;
+    selectedFile = null;
 
     showAttachment(
         file,
@@ -2019,15 +1296,16 @@ function saveRecordedVideo() {
 
     if (mediaResult) {
 
-        mediaResult.innerHTML =
-            "<div>🎥 Video ready to send</div>";
-
+        mediaResult.innerHTML = `
+            <div class="media-result">
+                🎥 Video ready to send
+            </div>
+        `;
     }
 
-    closeCamera();
-
+    recorder = null;
+    recordedChunks = [];
 }
-
 
 /* =========================================================
    MICROPHONE / VOICE INPUT
@@ -2039,198 +1317,234 @@ function setupSpeechRecognition() {
         window.SpeechRecognition ||
         window.webkitSpeechRecognition;
 
-    if (
-        !SpeechRecognition
-    ) {
+    if (!SpeechRecognition) {
 
-        if (micBtn) {
-
-            micBtn.title =
-                "Voice input is not supported by this browser";
-
-        }
-
-        return;
-
+        return false;
     }
 
     recognition =
         new SpeechRecognition();
 
-    recognition.continuous =
-        false;
-
-    recognition.interimResults =
-        true;
-
+    recognition.continuous = false;
+    recognition.interimResults = true;
     recognition.lang =
-        navigator.language ||
-        "en-US";
+        localStorage.getItem(
+            "swift_language"
+        ) || "en-US";
 
-    recognition.onstart =
-        () => {
+    recognition.onstart = () => {
 
-            isListening =
-                true;
+        isListening = true;
 
-            micBtn?.classList.add(
-                "listening"
-            );
+        micBtn?.classList.add(
+            "listening"
+        );
 
-            if (micBtn) {
-
-                micBtn.innerHTML =
-                    "🔴";
-
-            }
-
-        };
+        if (micBtn)
+            micBtn.textContent = "🔴";
+    };
 
     recognition.onresult =
         event => {
 
-            let transcript =
-                "";
+            let finalText = "";
+            let interimText = "";
 
             for (
-                let i =
-                    event.resultIndex;
-                i <
-                    event.results.length;
+                let i = event.resultIndex;
+                i < event.results.length;
                 i++
             ) {
 
-                transcript +=
-                    event.results[i][0]
-                        .transcript;
+                const transcript =
+                    event.results[i][0].transcript;
 
+                if (
+                    event.results[i].isFinal
+                ) {
+
+                    finalText += transcript;
+
+                } else {
+
+                    interimText += transcript;
+                }
             }
 
             if (userInput) {
 
-                userInput.value =
-                    transcript;
+                if (finalText) {
+
+                    userInput.value =
+                        (
+                            userInput.value
+                                ? userInput.value + " "
+                                : ""
+                        ) + finalText;
+                }
+
+                userInput.dataset.interim =
+                    interimText;
 
                 resizeInput();
-
             }
-
         };
 
     recognition.onerror =
         error => {
 
             console.error(
-                "Speech recognition:",
+                "Speech recognition error:",
                 error
             );
 
             stopListening();
 
+            if (
+                error.error === "not-allowed"
+            ) {
+
+                alert(
+                    "Microphone permission was denied. Please allow microphone access."
+                );
+            }
         };
 
-    recognition.onend =
-        () => {
+    recognition.onend = () => {
 
-            stopListening();
+        stopListening();
+    };
 
-        };
-
+    return true;
 }
-
 
 function startListening() {
 
     if (!recognition) {
 
-        alert(
-            "Voice input is not supported in this browser."
-        );
+        const supported =
+            setupSpeechRecognition();
+
+        if (!supported) {
+
+            alert(
+                "Voice input is not supported by this browser."
+            );
+
+            return;
+        }
+    }
+
+    if (isListening) {
+
+        stopListening();
 
         return;
-
     }
 
     try {
 
         recognition.lang =
-            navigator.language ||
-            "en-US";
+            localStorage.getItem(
+                "swift_language"
+            ) || "en-US";
 
         recognition.start();
 
     } catch (error) {
 
-        console.log(
-            "Speech start:",
-            error
-        );
-
+        console.error(error);
     }
-
 }
-
 
 function stopListening() {
 
-    isListening =
-        false;
+    isListening = false;
 
     micBtn?.classList.remove(
         "listening"
     );
 
-    if (micBtn) {
+    if (micBtn)
+        micBtn.textContent = "🎙️";
 
-        micBtn.innerHTML =
-            "🎤";
+    if (recognition) {
 
+        try {
+            recognition.stop();
+        } catch {}
     }
-
 }
-
 
 micBtn?.addEventListener(
     "click",
-    () => {
+    startListening
+);
 
-        if (isListening) {
+/* =========================================================
+   AI API
+========================================================= */
 
-            recognition?.stop();
+async function askAI(message) {
 
-        } else {
+    const response =
+        await fetch(
+            "/api/gemini",
+            {
+                method: "POST",
 
-            startListening();
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
 
-        }
+                body:
+                    JSON.stringify({
+                        message,
+                        thinkHarder
+                    })
+            }
+        );
 
+    const result =
+        await readResponse(response);
+
+    if (!result.ok) {
+
+        const serverMessage =
+            result.data?.error ||
+            result.data?.message ||
+            result.data?.raw ||
+            `HTTP ${result.status}`;
+
+        throw new Error(
+            serverMessage
+        );
     }
-);
 
+    const data = result.data;
+
+    return (
+        data.reply ||
+        data.response ||
+        data.text ||
+        data.message ||
+        data?.candidates?.[0]
+            ?.content?.parts
+            ?.map(part => part.text || "")
+            .join("") ||
+        ""
+    );
+}
 
 /* =========================================================
-   SEND BUTTON
+   IMAGE / FILE / VIDEO API
 ========================================================= */
 
-sendBtn?.addEventListener(
-    "click",
-    sendMessage
-);
-
-
-/* =========================================================
-   FILE TO BASE64
-========================================================= */
-
-function fileToBase64(
-    file
-) {
+async function fileToBase64(file) {
 
     return new Promise(
-        (
-            resolve,
-            reject
-        ) => {
+        (resolve, reject) => {
 
             const reader =
                 new FileReader();
@@ -2242,8 +1556,7 @@ function fileToBase64(
                         reader.result;
 
                     if (
-                        typeof result !==
-                        "string"
+                        typeof result !== "string"
                     ) {
 
                         reject(
@@ -2253,213 +1566,95 @@ function fileToBase64(
                         );
 
                         return;
-
                     }
 
-                    const comma =
-                        result.indexOf(
-                            ","
-                        );
-
-                    resolve(
-                        comma >= 0
-                            ? result.slice(
-                                comma + 1
-                            )
-                            : result
-                    );
-
+                    resolve(result);
                 };
 
             reader.onerror =
-                () => {
+                () => reject(
+                    new Error(
+                        "Unable to read file."
+                    )
+                );
 
-                    reject(
-                        reader.error ||
-                        new Error(
-                            "File reading failed."
-                        )
-                    );
-
-                };
-
-            reader.readAsDataURL(
-                file
-            );
-
+            reader.readAsDataURL(file);
         }
     );
-
 }
 
-
-/* =========================================================
-   VIDEO FIRST FRAME
-========================================================= */
-
-function videoToImage(
-    file
+async function askAIWithAttachment(
+    message,
+    file,
+    type
 ) {
 
-    return new Promise(
-        (
-            resolve,
-            reject
-        ) => {
+    const dataUrl =
+        await fileToBase64(file);
 
-            const url =
-                URL.createObjectURL(
-                    file
-                );
+    const response =
+        await fetch(
+            "/api/gemini",
+            {
+                method: "POST",
 
-            const video =
-                document.createElement(
-                    "video"
-                );
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
 
-            video.src =
-                url;
+                body:
+                    JSON.stringify({
 
-            video.muted =
-                true;
+                        message,
 
-            video.playsInline =
-                true;
+                        thinkHarder,
 
-            video.preload =
-                "metadata";
+                        attachment: {
 
-            video.addEventListener(
-                "loadeddata",
-                () => {
+                            type,
 
-                    try {
+                            name:
+                                file.name,
 
-                        video.currentTime =
-                            Math.min(
-                                0.1,
-                                video.duration ||
-                                    0.1
-                            );
+                            mimeType:
+                                file.type,
 
-                    } catch {
-
-                        captureFrame();
-
-                    }
-
-                }
-            );
-
-            video.addEventListener(
-                "seeked",
-                captureFrame,
-                {
-                    once: true
-                }
-            );
-
-            video.addEventListener(
-                "error",
-                () => {
-
-                    URL.revokeObjectURL(
-                        url
-                    );
-
-                    reject(
-                        new Error(
-                            "Unable to read video."
-                        )
-                    );
-
-                }
-            );
-
-            function captureFrame() {
-
-                try {
-
-                    const canvas =
-                        document.createElement(
-                            "canvas"
-                        );
-
-                    canvas.width =
-                        video.videoWidth ||
-                        1280;
-
-                    canvas.height =
-                        video.videoHeight ||
-                        720;
-
-                    const ctx =
-                        canvas.getContext(
-                            "2d"
-                        );
-
-                    ctx.drawImage(
-                        video,
-                        0,
-                        0,
-                        canvas.width,
-                        canvas.height
-                    );
-
-                    canvas.toBlob(
-                        blob => {
-
-                            URL.revokeObjectURL(
-                                url
-                            );
-
-                            if (!blob) {
-
-                                reject(
-                                    new Error(
-                                        "Could not capture video frame."
-                                    )
-                                );
-
-                                return;
-
-                            }
-
-                            resolve(
-                                new File(
-                                    [blob],
-                                    "video-frame.jpg",
-                                    {
-                                        type:
-                                            "image/jpeg"
-                                    }
-                                )
-                            );
-
-                        },
-                        "image/jpeg",
-                        0.9
-                    );
-
-                } catch (error) {
-
-                    URL.revokeObjectURL(
-                        url
-                    );
-
-                    reject(
-                        error
-                    );
-
-                }
-
+                            data:
+                                dataUrl
+                        }
+                    })
             }
+        );
 
-        }
+    const result =
+        await readResponse(response);
+
+    if (!result.ok) {
+
+        const error =
+            result.data?.error ||
+            result.data?.message ||
+            result.data?.raw ||
+            `HTTP ${result.status}`;
+
+        throw new Error(error);
+    }
+
+    const data = result.data;
+
+    return (
+        data.reply ||
+        data.response ||
+        data.text ||
+        data.message ||
+        data?.candidates?.[0]
+            ?.content?.parts
+            ?.map(part => part.text || "")
+            .join("") ||
+        ""
     );
-
 }
-
 
 /* =========================================================
    SEND MESSAGE
@@ -2467,100 +1662,87 @@ function videoToImage(
 
 async function sendMessage() {
 
-    if (sending) {
-        return;
-    }
+    if (sending) return;
 
-    const message =
-        userInput?.value?.trim() ||
-        "";
+    const text =
+        userInput?.value?.trim() || "";
 
-    if (
-        !message &&
-        !selectedImage &&
-        !selectedVideo &&
-        !selectedFile
-    ) {
+    const hasAttachment =
+        !!(
+            selectedImage ||
+            selectedVideo ||
+            selectedFile
+        );
 
+    if (!text && !hasAttachment)
         return;
 
-    }
+    sending = true;
 
-    sending =
-        true;
+    sendBtn?.classList.add("loading");
 
-    if (sendBtn) {
+    removeWelcome();
 
-        sendBtn.disabled =
-            true;
-
-    }
-
-    const imageFile =
-        selectedImage;
-
-    const videoFile =
-        selectedVideo;
-
-    const file =
-        selectedFile;
-
-    let attachment =
-        null;
-
-    if (imageFile) {
-
-        attachment = {
-
-            type:
-                "image",
-
-            url:
-                URL.createObjectURL(
-                    imageFile
-                )
-
-        };
-
-    } else if (videoFile) {
-
-        attachment = {
-
-            type:
-                "video",
-
-            url:
-                URL.createObjectURL(
-                    videoFile
-                )
-
-        };
-
-    } else if (file) {
-
-        attachment = {
-
-            type:
-                "file",
-
-            name:
-                file.name
-
-        };
-
-    }
+    const attachment =
+        selectedImage
+            ? {
+                type: "image",
+                url:
+                    URL.createObjectURL(
+                        selectedImage
+                    )
+            }
+            : selectedVideo
+                ? {
+                    type: "video",
+                    url:
+                        URL.createObjectURL(
+                            selectedVideo
+                        )
+                }
+                : selectedFile
+                    ? {
+                        type: "file",
+                        name:
+                            selectedFile.name
+                    }
+                    : null;
 
     addMessage(
-        message,
+        text ||
+            (
+                selectedImage
+                    ? "Please analyze this image."
+                    : selectedVideo
+                        ? "Please analyze this video."
+                        : selectedFile
+                            ? `Please analyze this file: ${selectedFile.name}`
+                            : ""
+            ),
         "user",
         attachment,
         true
     );
 
-    userInput.value =
-        "";
+    const requestText =
+        text ||
+        (
+            selectedImage
+                ? "Analyze this image in detail."
+                : selectedVideo
+                    ? "Analyze this video and describe what is happening."
+                    : selectedFile
+                        ? `Analyze this file: ${selectedFile.name}`
+                        : ""
+        );
+
+    userInput.value = "";
 
     resizeInput();
+
+    const imageToSend = selectedImage;
+    const videoToSend = selectedVideo;
+    const fileToSend = selectedFile;
 
     clearAttachment();
 
@@ -2568,204 +1750,81 @@ async function sendMessage() {
 
     try {
 
-        const body = {
+        let reply = "";
 
-            message,
+        if (imageToSend) {
 
-            thinkHarder
-
-        };
-
-
-        /* -----------------------------------------
-           IMAGE
-        ----------------------------------------- */
-
-        if (imageFile) {
-
-            const base64 =
-                await fileToBase64(
-                    imageFile
+            reply =
+                await askAIWithAttachment(
+                    requestText,
+                    imageToSend,
+                    "image"
                 );
 
-            body.image = {
+        } else if (videoToSend) {
 
-                data:
-                    base64,
-
-                mimeType:
-                    imageFile.type ||
-                    "image/jpeg"
-
-            };
-
-        }
-
-
-        /* -----------------------------------------
-           VIDEO
-        ----------------------------------------- */
-
-        if (videoFile) {
-
-            const frame =
-                await videoToImage(
-                    videoFile
+            reply =
+                await askAIWithAttachment(
+                    requestText,
+                    videoToSend,
+                    "video"
                 );
 
-            const base64 =
-                await fileToBase64(
-                    frame
+        } else if (fileToSend) {
+
+            reply =
+                await askAIWithAttachment(
+                    requestText,
+                    fileToSend,
+                    "file"
                 );
 
-            body.image = {
+        } else {
 
-                data:
-                    base64,
-
-                mimeType:
-                    "image/jpeg"
-
-            };
-
-            if (!body.message) {
-
-                body.message =
-                    "Please analyze this video frame and describe what is happening.";
-
-            }
-
+            reply =
+                await askAI(requestText);
         }
-
-
-        /* -----------------------------------------
-           API
-        ----------------------------------------- */
-
-        const response =
-            await fetch(
-                "/api/gemini",
-                {
-
-                    method:
-                        "POST",
-
-                    headers: {
-
-                        "Content-Type":
-                            "application/json"
-
-                    },
-
-                    body:
-                        JSON.stringify(
-                            body
-                        )
-
-                }
-            );
-
-
-        let data =
-            null;
-
-
-        try {
-
-            data =
-                await response.json();
-
-        } catch {
-
-            throw new Error(
-                `Server returned HTTP ${response.status}`
-            );
-
-        }
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                data?.error ||
-                `Request failed (${response.status})`
-            );
-
-        }
-
-
-        if (
-            data?.success === false
-        ) {
-
-            throw new Error(
-                data.error ||
-                "AI request failed."
-            );
-
-        }
-
-
-        const answer =
-            (
-                data?.answer ||
-                data?.reply ||
-                data?.text ||
-                ""
-            )
-            .toString()
-            .trim();
-
-
-        if (!answer) {
-
-            throw new Error(
-                "AI returned an empty response."
-            );
-
-        }
-
 
         removeTyping();
 
+        if (!reply) {
+
+            reply =
+                "I received your message, but the AI returned an empty response.";
+        }
+
         addMessage(
-            cleanAIResponse(
-                answer
-            ),
+            reply,
             "ai",
             null,
             true
         );
 
-
-        if (memoryEnabled) {
-
-            localStorage.setItem(
-                "swift_last_topic",
-                message.slice(
-                    0,
-                    300
-                )
-            );
-
-        }
-
-
     } catch (error) {
 
         console.error(
-            "SwiftCortex API Error:",
+            "SwiftCortex API error:",
             error
         );
 
         removeTyping();
 
+        let message =
+            error?.message ||
+            "Unknown connection error.";
+
+        if (
+            message.includes("429") ||
+            message.toLowerCase().includes("rate limit") ||
+            message.toLowerCase().includes("tpm")
+        ) {
+
+            message =
+                "The AI service is temporarily rate-limited. Please wait a little and try again.";
+        }
+
         addMessage(
-            "Connection error: " +
-            (
-                error?.message ||
-                "Unable to connect to SwiftCortex API."
-            ),
+            "Connection error: " + message,
             "ai",
             null,
             false
@@ -2773,62 +1832,40 @@ async function sendMessage() {
 
     } finally {
 
-        sending =
-            false;
+        sending = false;
 
-        if (sendBtn) {
-
-            sendBtn.disabled =
-                false;
-
-        }
+        sendBtn?.classList.remove(
+            "loading"
+        );
 
         userInput?.focus();
-
     }
-
 }
 
+sendBtn?.addEventListener(
+    "click",
+    sendMessage
+);
 
 /* =========================================================
-   CLEAN AI RESPONSE
+   ENTER TO SEND
 ========================================================= */
 
-function cleanAIResponse(
-    text
-) {
+userInput?.addEventListener(
+    "keydown",
+    event => {
 
-    if (!text) {
-        return "";
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey
+        ) {
+
+            event.preventDefault();
+
+            sendMessage();
+        }
     }
-
-    let result =
-        String(text);
-
-    /*
-       Prevent visible <think> blocks.
-       This does NOT expose or display reasoning.
-    */
-
-    result =
-        result.replace(
-            /<think>[\s\S]*?<\/think>/gi,
-            ""
-        );
-
-    result =
-        result.replace(
-            /<think>[\s\S]*$/gi,
-            ""
-        );
-
-    result =
-        result.trim();
-
-    return result;
-
-}
-
+);
 
 /* =========================================================
    THINK HARDER
@@ -2851,18 +1888,15 @@ thinkBtn?.addEventListener(
         if (thinkHarder) {
 
             thinkBtn.title =
-                "Think Harder is ON";
+                "Think Harder: ON";
 
         } else {
 
             thinkBtn.title =
-                "Think Harder is OFF";
-
+                "Think Harder: OFF";
         }
-
     }
 );
-
 
 /* =========================================================
    PLUGINS
@@ -2877,126 +1911,18 @@ pluginBtn?.addEventListener(
         pluginModal?.classList.add(
             "show"
         );
-
     }
 );
 
+pluginClose?.addEventListener(
+    "click",
+    () => {
 
-/* =========================================================
-   MODALS
-========================================================= */
-
-function setupModals() {
-
-    settingsClose?.addEventListener(
-        "click",
-        () => {
-
-            settingsModal?.classList.remove(
-                "show"
-            );
-
-        }
-    );
-
-    pluginClose?.addEventListener(
-        "click",
-        () => {
-
-            pluginModal?.classList.remove(
-                "show"
-            );
-
-        }
-    );
-
-    profileClose?.addEventListener(
-        "click",
-        () => {
-
-            profileModal?.classList.remove(
-                "show"
-            );
-
-        }
-    );
-
-
-    settingsModal?.addEventListener(
-        "click",
-        event => {
-
-            if (
-                event.target ===
-                settingsModal
-            ) {
-
-                settingsModal.classList.remove(
-                    "show"
-                );
-
-            }
-
-        }
-    );
-
-
-    pluginModal?.addEventListener(
-        "click",
-        event => {
-
-            if (
-                event.target ===
-                pluginModal
-            ) {
-
-                pluginModal.classList.remove(
-                    "show"
-                );
-
-            }
-
-        }
-    );
-
-
-    profileModal?.addEventListener(
-        "click",
-        event => {
-
-            if (
-                event.target ===
-                profileModal
-            ) {
-
-                profileModal.classList.remove(
-                    "show"
-                );
-
-            }
-
-        }
-    );
-
-
-    cameraModal?.addEventListener(
-        "click",
-        event => {
-
-            if (
-                event.target ===
-                cameraModal
-            ) {
-
-                closeCamera();
-
-            }
-
-        }
-    );
-
-}
-
+        pluginModal?.classList.remove(
+            "show"
+        );
+    }
+);
 
 /* =========================================================
    SETTINGS
@@ -3010,9 +1936,19 @@ settingsBtn?.addEventListener(
             "show"
         );
 
+        updateMemoryUI();
     }
 );
 
+settingsClose?.addEventListener(
+    "click",
+    () => {
+
+        settingsModal?.classList.remove(
+            "show"
+        );
+    }
+);
 
 /* =========================================================
    PROFILE
@@ -3025,136 +1961,262 @@ profileBtn?.addEventListener(
         profileModal?.classList.add(
             "show"
         );
-
     }
 );
 
+profileClose?.addEventListener(
+    "click",
+    () => {
+
+        profileModal?.classList.remove(
+            "show"
+        );
+    }
+);
 
 /* =========================================================
-   CLEAR HISTORY
+   MODAL OUTSIDE CLICK
 ========================================================= */
 
 document.addEventListener(
     "click",
     event => {
 
-        const setting =
-            event.target.closest(
-                ".setting-item"
-            );
+        [
+            cameraModal,
+            settingsModal,
+            pluginModal,
+            profileModal
+        ].forEach(modal => {
 
-        if (!setting) {
-            return;
-        }
+            if (
+                modal &&
+                event.target === modal
+            ) {
 
-        const text =
-            setting.textContent ||
-            "";
-
-        if (
-            text.includes(
-                "Clear History"
-            )
-        ) {
-
-            const confirmed =
-                confirm(
-                    "Clear all recent chats?"
+                modal.classList.remove(
+                    "show"
                 );
-
-            if (!confirmed) {
-                return;
             }
-
-            localStorage.removeItem(
-                "swift_history"
-            );
-
-            currentChat = [];
-
-            renderHistory();
-
-            showWelcome();
-
-        }
-
+        });
     }
 );
 
-
 /* =========================================================
-   ESCAPE KEY
+   MEMORY
 ========================================================= */
 
-document.addEventListener(
-    "keydown",
-    event => {
+function updateMemoryUI() {
 
-        if (
-            event.key !==
-            "Escape"
-        ) {
-            return;
-        }
+    const text =
+        memoryEnabled
+            ? "ON"
+            : "OFF";
 
-        plusMenu?.classList.remove(
-            "show"
-        );
+    if (memoryStatus)
+        memoryStatus.textContent = text;
 
-        settingsModal?.classList.remove(
-            "show"
-        );
+    if (settingsMemory)
+        settingsMemory.textContent =
+            memoryEnabled
+                ? "On"
+                : "Off";
+}
 
-        pluginModal?.classList.remove(
-            "show"
-        );
-
-        profileModal?.classList.remove(
-            "show"
-        );
-
-        closeCamera();
-
-    }
-);
-
-
-/* =========================================================
-   BEFORE LEAVING
-========================================================= */
-
-window.addEventListener(
-    "beforeunload",
+memoryBtn?.addEventListener(
+    "click",
     () => {
 
-        if (
-            currentChat.length
-        ) {
+        memoryEnabled =
+            !memoryEnabled;
 
-            saveCurrentChat();
+        localStorage.setItem(
+            "swift_memory",
+            memoryEnabled
+                ? "on"
+                : "off"
+        );
 
-        }
-
-        stopRecording();
-
-        stopCamera();
-
+        updateMemoryUI();
     }
 );
 
-
 /* =========================================================
-   INITIAL UI
+   THEME
 ========================================================= */
 
-renderHistory();
+function applyTheme(theme) {
+
+    currentTheme = theme;
+
+    if (theme === "system") {
+
+        document.documentElement.removeAttribute(
+            "data-theme"
+        );
+
+        return;
+    }
+
+    document.documentElement.setAttribute(
+        "data-theme",
+        theme
+    );
+}
+
+function cycleTheme() {
+
+    if (currentTheme === "dark") {
+
+        currentTheme = "light";
+
+    } else if (currentTheme === "light") {
+
+        currentTheme = "system";
+
+    } else {
+
+        currentTheme = "dark";
+    }
+
+    localStorage.setItem(
+        "swift_theme",
+        currentTheme
+    );
+
+    applyTheme(currentTheme);
+
+    if (themeBtn) {
+
+        themeBtn.querySelector("span")?.replaceChildren();
+
+        const span =
+            themeBtn.querySelector("span");
+
+        if (span) {
+
+            span.textContent =
+                currentTheme === "dark"
+                    ? "Dark Mode"
+                    : currentTheme === "light"
+                        ? "Light Mode"
+                        : "System";
+        }
+    }
+}
+
+themeBtn?.addEventListener(
+    "click",
+    cycleTheme
+);
+
+/* =========================================================
+   SETTINGS MEMORY ITEM
+========================================================= */
+
+$$(".setting-item").forEach(
+    button => {
+
+        const text =
+            button.textContent || "";
+
+        if (
+            text.includes("Memory")
+        ) {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    memoryEnabled =
+                        !memoryEnabled;
+
+                    localStorage.setItem(
+                        "swift_memory",
+                        memoryEnabled
+                            ? "on"
+                            : "off"
+                    );
+
+                    updateMemoryUI();
+                }
+            );
+        }
+
+        if (
+            text.includes("Clear History")
+        ) {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    const ok =
+                        confirm(
+                            "Clear all recent chat history?"
+                        );
+
+                    if (!ok) return;
+
+                    localStorage.removeItem(
+                        "swift_history"
+                    );
+
+                    currentChat = [];
+
+                    renderHistory();
+
+                    showWelcome();
+                }
+            );
+        }
+
+        if (
+            text.includes("Privacy")
+        ) {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    const current =
+                        localStorage.getItem(
+                            "swift_save_history"
+                        ) !== "off";
+
+                    const save =
+                        confirm(
+                            current
+                                ? "Chat history is currently saved locally. Press OK to turn saving OFF."
+                                : "Chat history saving is currently OFF. Press OK to turn saving ON."
+                        );
+
+                    localStorage.setItem(
+                        "swift_save_history",
+                        save
+                            ? "off"
+                            : "on"
+                    );
+                }
+            );
+        }
+    }
+);
+
+/* =========================================================
+   INITIALIZE
+========================================================= */
+
+applyTheme(currentTheme);
 
 updateMemoryUI();
 
-applyTheme();
+renderHistory();
 
-resizeInput();
+setupSpeechRecognition();
 
+if (recordTime)
+    recordTime.style.display = "none";
 
 console.log(
     "⚡ SwiftCortex AI Ultra loaded successfully."
