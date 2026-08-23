@@ -12,6 +12,7 @@ const thinkBtn=$("thinkBtn");
 
 const imageInput=$("imageInput");
 const fileInput=$("fileInput");
+
 const userInput=$("userInput");
 const sendBtn=$("sendBtn");
 const messages=$("messages");
@@ -21,45 +22,32 @@ const cameraModal=$("cameraModal");
 const cameraClose=$("cameraClose");
 const cameraVideo=$("cameraVideo");
 const takePhoto=$("takePhoto");
-const photoMode=$("photoMode");
-const videoMode=$("videoMode");
 const switchCamera=$("switchCamera");
 
 let selectedImage=null;
-let selectedVideo=null;
 let selectedFile=null;
-
 let cameraStream=null;
-let cameraFacing="user";
-let thinkHarder=false;
-let sending=false;
+let facing="user";
+let thinking=false;
+let busy=false;
 
 
-/* PLUS */
+/* MENU */
 
-plusBtn?.addEventListener("click",e=>{
+plusBtn.onclick=e=>{
  e.stopPropagation();
- plusMenu?.classList.toggle("show");
-});
+ plusMenu.classList.toggle("show");
+};
 
-document.addEventListener("click",e=>{
- if(
-  plusMenu &&
-  !plusMenu.contains(e.target) &&
-  e.target!==plusBtn
- ){
+document.onclick=e=>{
+ if(!plusMenu.contains(e.target)&&e.target!==plusBtn)
   plusMenu.classList.remove("show");
- }
-});
-
-function closeMenu(){
- plusMenu?.classList.remove("show");
-}
+};
 
 
 /* MESSAGE */
 
-function addMessage(text,type="ai",attachment=null){
+function addMessage(text,type="ai",file=null){
 
  const box=document.createElement("div");
 
@@ -74,104 +62,78 @@ function addMessage(text,type="ai",attachment=null){
   box.appendChild(p);
  }
 
- if(attachment?.type==="image"){
+ if(file?.type==="image"){
   const img=document.createElement("img");
-  img.src=attachment.url;
+  img.src=file.url;
   img.style.maxWidth="280px";
   img.style.borderRadius="14px";
+  img.style.display="block";
   box.appendChild(img);
  }
 
- if(attachment?.type==="video"){
-  const v=document.createElement("video");
-  v.src=attachment.url;
-  v.controls=true;
-  v.playsInline=true;
-  v.style.maxWidth="300px";
-  v.style.borderRadius="14px";
-  box.appendChild(v);
+ if(file?.type==="file"){
+  const p=document.createElement("div");
+  p.textContent="📄 "+file.name;
+  box.appendChild(p);
  }
 
- if(attachment?.type==="file"){
-  const f=document.createElement("div");
-  f.textContent="📄 "+attachment.name;
-  box.appendChild(f);
- }
-
- messages?.appendChild(box);
-
- if(messages)
-  messages.scrollTop=messages.scrollHeight;
+ messages.appendChild(box);
+ messages.scrollTop=messages.scrollHeight;
 
  return box;
 }
 
 
-/* PHOTOS */
+/* PHOTO */
 
-photoBtn?.addEventListener("click",()=>{
- closeMenu();
+photoBtn.onclick=()=>{
+ plusMenu.classList.remove("show");
  imageInput.value="";
  imageInput.click();
-});
+};
 
-imageInput?.addEventListener("change",()=>{
+imageInput.onchange=()=>{
 
- const file=imageInput.files?.[0];
+ const f=imageInput.files[0];
 
- if(!file)return;
+ if(!f)return;
 
- if(!file.type.startsWith("image/")){
+ if(!f.type.startsWith("image/")){
   addMessage("⚠️ Please select an image.");
   return;
  }
 
- selectedImage=file;
- selectedVideo=null;
+ selectedImage=f;
  selectedFile=null;
 
- showPreview(file,"image");
-});
+ showPreview(f);
+};
 
 
-/* FILES */
+/* FILE */
 
-fileBtn?.addEventListener("click",()=>{
- closeMenu();
+fileBtn.onclick=()=>{
+ plusMenu.classList.remove("show");
  fileInput.value="";
  fileInput.click();
-});
+};
 
-fileInput?.addEventListener("change",()=>{
+fileInput.onchange=()=>{
 
- const file=fileInput.files?.[0];
+ const f=fileInput.files[0];
 
- if(!file)return;
+ if(!f)return;
 
+ selectedFile=f;
  selectedImage=null;
- selectedVideo=null;
- selectedFile=null;
 
- if(file.type.startsWith("image/")){
-  selectedImage=file;
-  showPreview(file,"image");
- }
- else if(file.type.startsWith("video/")){
-  selectedVideo=file;
-  showPreview(file,"video");
- }
- else{
-  selectedFile=file;
-  showPreview(file,"file");
- }
-});
+ showPreview(f);
+};
 
 
 /* PREVIEW */
 
-function showPreview(file,type){
-
- if(!imagePreview)return;
+function showPreview(file){
 
  imagePreview.innerHTML="";
 
@@ -182,7 +144,7 @@ function showPreview(file,type){
  box.style.gap="10px";
  box.style.padding="8px";
 
- if(type==="image"){
+ if(file.type.startsWith("image/")){
 
   const img=document.createElement("img");
 
@@ -195,39 +157,20 @@ function showPreview(file,type){
   box.appendChild(img);
  }
 
- if(type==="video"){
-
-  const v=document.createElement("video");
-
-  v.src=URL.createObjectURL(file);
-  v.controls=true;
-  v.style.width="90px";
-  v.style.height="60px";
-
-  box.appendChild(v);
- }
-
  const name=document.createElement("span");
 
- name.textContent=
-  type==="image"
-   ?"🖼 "+file.name
-   :type==="video"
-    ?"🎥 "+file.name
-    :"📄 "+file.name;
-
+ name.textContent="📎 "+file.name;
  name.style.color="white";
  name.style.flex="1";
 
  box.appendChild(name);
 
- const remove=document.createElement("button");
+ const x=document.createElement("button");
 
- remove.textContent="✕";
- remove.type="button";
- remove.onclick=clearAttachment;
+ x.textContent="✕";
+ x.onclick=clearFile;
 
- box.appendChild(remove);
+ box.appendChild(x);
 
  imagePreview.appendChild(box);
 }
@@ -235,104 +178,84 @@ function showPreview(file,type){
 
 /* CLEAR */
 
-function clearAttachment(){
+function clearFile(){
 
  selectedImage=null;
- selectedVideo=null;
  selectedFile=null;
 
- if(imageInput)imageInput.value="";
- if(fileInput)fileInput.value="";
- if(imagePreview)imagePreview.innerHTML="";
+ imageInput.value="";
+ fileInput.value="";
+ imagePreview.innerHTML="";
 }
 
 
-/* THINK HARDER */
+/* THINK */
 
-thinkBtn?.addEventListener("click",()=>{
+thinkBtn.onclick=()=>{
 
- thinkHarder=!thinkHarder;
+ thinking=!thinking;
 
  thinkBtn.textContent=
-  thinkHarder
+  thinking
    ?"🧠 Think Harder ✓"
    :"🧠 Think Harder";
 
- closeMenu();
-});
+ plusMenu.classList.remove("show");
+};
 
 
-/* PLUGINS */
+/* PLUGIN */
 
-pluginBtn?.addEventListener("click",()=>{
+pluginBtn.onclick=()=>{
 
- closeMenu();
+ plusMenu.classList.remove("show");
 
  addMessage(
-  "🧩 Plugins are ready to be connected.",
-  "ai"
+  "🧩 Plugins are ready to be connected."
  );
-});
+};
 
 
 /* TEXT */
 
-userInput?.addEventListener("input",()=>{
-
+userInput.oninput=()=>{
  userInput.style.height="auto";
-
  userInput.style.height=
   Math.min(userInput.scrollHeight,150)+"px";
-});
+};
 
-
-userInput?.addEventListener("keydown",e=>{
+userInput.onkeydown=e=>{
 
  if(e.key==="Enter"&&!e.shiftKey){
 
   e.preventDefault();
-
   sendMessage();
  }
-});
-/* =========================
-   CAMERA
-========================= */
+};
+/* CAMERA */
 
-cameraBtn?.addEventListener("click",async()=>{
- closeMenu();
+cameraBtn.onclick=async()=>{
 
- if(!cameraModal)return;
+ plusMenu.classList.remove("show");
 
- cameraModal.classList.add("show");
-
- await startCamera();
-});
-
-
-async function startCamera(){
-
- stopCamera();
-
- if(!navigator.mediaDevices?.getUserMedia){
-  addMessage("❌ Camera is not supported.");
+ if(!cameraModal){
+  addMessage("📷 Camera unavailable.");
   return;
  }
+
+ cameraModal.classList.add("show");
 
  try{
 
   cameraStream=
    await navigator.mediaDevices.getUserMedia({
     video:{
-     facingMode:{
-      ideal:cameraFacing
-     }
+     facingMode:{ideal:facing}
     },
     audio:false
    });
 
   cameraVideo.srcObject=cameraStream;
-
   await cameraVideo.play();
 
  }catch(e){
@@ -340,177 +263,154 @@ async function startCamera(){
   console.error(e);
 
   addMessage(
-   "❌ Camera permission was denied or unavailable."
+   "❌ Camera permission denied."
   );
  }
-}
+};
 
 
-function stopCamera(){
+/* CLOSE CAMERA */
+
+cameraClose.onclick=()=>{
 
  if(cameraStream){
 
-  cameraStream
-   .getTracks()
+  cameraStream.getTracks()
    .forEach(t=>t.stop());
 
   cameraStream=null;
  }
 
- if(cameraVideo)
-  cameraVideo.srcObject=null;
-}
+ cameraVideo.srcObject=null;
 
-
-cameraClose?.addEventListener(
- "click",
- ()=>{
-  stopCamera();
-  cameraModal?.classList.remove("show");
- }
-);
+ cameraModal.classList.remove("show");
+};
 
 
 /* SWITCH CAMERA */
 
-switchCamera?.addEventListener(
- "click",
- async()=>{
+switchCamera.onclick=async()=>{
 
-  cameraFacing=
-   cameraFacing==="user"
-    ?"environment"
-    :"user";
+ facing=
+  facing==="user"
+   ?"environment"
+   :"user";
 
-  await startCamera();
+ if(cameraStream)
+  cameraStream.getTracks()
+   .forEach(t=>t.stop());
+
+ try{
+
+  cameraStream=
+   await navigator.mediaDevices.getUserMedia({
+    video:{
+     facingMode:{ideal:facing}
+    },
+    audio:false
+   });
+
+  cameraVideo.srcObject=cameraStream;
+  await cameraVideo.play();
+
+ }catch(e){
+
+  addMessage("❌ Cannot switch camera.");
  }
-);
-
-
-/* PHOTO MODE */
-
-photoMode?.addEventListener(
- "click",
- ()=>{
-
-  photoMode.classList.add("active");
-  videoMode.classList.remove("active");
-
-  takePhoto.style.display="inline-flex";
- }
-);
-
-
-/* VIDEO MODE */
-
-videoMode?.addEventListener(
- "click",
- ()=>{
-
-  videoMode.classList.add("active");
-  photoMode.classList.remove("active");
-
-  takePhoto.style.display="none";
- }
-);
+};
 
 
 /* TAKE PHOTO */
 
-takePhoto?.addEventListener(
- "click",
- ()=>{
+takePhoto.onclick=()=>{
 
-  if(!cameraStream){
+ if(!cameraStream){
 
-   addMessage(
-    "⚠️ Camera is not ready."
-   );
-
-   return;
-  }
-
-  const canvas=
-   document.createElement("canvas");
-
-  canvas.width=
-   cameraVideo.videoWidth||1280;
-
-  canvas.height=
-   cameraVideo.videoHeight||720;
-
-  const ctx=
-   canvas.getContext("2d");
-
-  ctx.drawImage(
-   cameraVideo,
-   0,
-   0,
-   canvas.width,
-   canvas.height
+  addMessage(
+   "⚠️ Camera is not ready."
   );
 
-  canvas.toBlob(blob=>{
-
-   if(!blob)return;
-
-   selectedImage=
-    new File(
-     [blob],
-     "camera-photo.jpg",
-     {type:"image/jpeg"}
-    );
-
-   selectedVideo=null;
-   selectedFile=null;
-
-   showPreview(
-    selectedImage,
-    "image"
-   );
-
-   stopCamera();
-
-   cameraModal.classList.remove("show");
-
-  },"image/jpeg",0.9);
- });
-
-
-/* =========================
-   SEND
-========================= */
-
-sendBtn?.addEventListener(
- "click",
- sendMessage
-);
-
-
-async function sendMessage(){
-
- if(sending)return;
-
- const text=
-  userInput?.value.trim()||"";
-
- if(
-  !text &&
-  !selectedImage &&
-  !selectedVideo &&
-  !selectedFile
- ){
   return;
  }
 
- sending=true;
+ const canvas=
+  document.createElement("canvas");
 
- if(sendBtn)
-  sendBtn.disabled=true;
+ canvas.width=
+  cameraVideo.videoWidth||1280;
 
+ canvas.height=
+  cameraVideo.videoHeight||720;
+
+ const ctx=
+  canvas.getContext("2d");
+
+ ctx.drawImage(
+  cameraVideo,
+  0,
+  0,
+  canvas.width,
+  canvas.height
+ );
+
+ canvas.toBlob(blob=>{
+
+  if(!blob)return;
+
+  selectedImage=
+   new File(
+    [blob],
+    "camera-photo.jpg",
+    {type:"image/jpeg"}
+   );
+
+  selectedFile=null;
+
+  showPreview(selectedImage);
+
+  cameraClose.click();
+
+ },"image/jpeg",.9);
+};
+
+
+/* BASE64 */
+
+function toBase64(file){
+
+ return new Promise((resolve,reject)=>{
+
+  const reader=
+   new FileReader();
+
+  reader.onload=
+   ()=>resolve(reader.result);
+
+  reader.onerror=reject;
+
+  reader.readAsDataURL(file);
+ });
+}
+
+
+/* SEND */
+
+sendBtn.onclick=sendMessage;
+
+async function sendMessage(){
+
+ if(busy)return;
+
+ const text=
+  userInput.value.trim();
+
+ if(!text&&!selectedImage&&!selectedFile)
+  return;
+
+ busy=true;
+ sendBtn.disabled=true;
 
  let attachment=null;
-
 
  if(selectedImage){
 
@@ -520,21 +420,9 @@ async function sendMessage(){
     selectedImage
    )
   };
-
  }
 
- else if(selectedVideo){
-
-  attachment={
-   type:"video",
-   url:URL.createObjectURL(
-    selectedVideo
-   )
-  };
-
- }
-
- else if(selectedFile){
+ if(selectedFile&&!selectedImage){
 
   attachment={
    type:"file",
@@ -542,33 +430,26 @@ async function sendMessage(){
   };
  }
 
-
  addMessage(
-  text||"📎 Attachment",
+  text||"📎 File",
   "user",
   attachment
  );
 
-
- const ai=
+ const replyBox=
   addMessage(
    "Thinking...",
    "ai"
   );
 
-
  try{
 
   let image=null;
 
-  if(selectedImage){
-
-   image=
-    await fileToBase64(
-     selectedImage
-    );
-  }
-
+  if(selectedImage)
+   image=await toBase64(
+    selectedImage
+   );
 
   const response=
    await fetch(
@@ -587,8 +468,7 @@ async function sendMessage(){
 
       image:image,
 
-      thinkHarder:
-       thinkHarder,
+      thinkHarder:thinking,
 
       clientDate:
        new Date().toISOString(),
@@ -602,132 +482,75 @@ async function sendMessage(){
     }
    );
 
-
   const data=
    await response.json();
 
-
-  if(!response.ok){
-
+  if(!response.ok)
    throw new Error(
     data.error||
-    "Server error: "+
-    response.status
+    "Server error "+response.status
    );
-  }
 
-
-  ai.textContent=
+  replyBox.textContent=
    data.text||
    "No response from AI.";
 
-
  }catch(error){
 
-  console.error(
-   "SwiftCortex error:",
-   error
-  );
+  console.error(error);
 
-  ai.textContent=
+  replyBox.textContent=
    "❌ Connection error: "+
    error.message;
 
  }
 
+ clearFile();
 
- clearAttachment();
+ userInput.value="";
+ userInput.style.height="auto";
 
-
- if(userInput){
-
-  userInput.value="";
-
-  userInput.style.height=
-   "auto";
- }
-
-
- sending=false;
-
- if(sendBtn)
-  sendBtn.disabled=false;
+ busy=false;
+ sendBtn.disabled=false;
 }
 
 
-/* =========================
-   BASE64
-========================= */
+/* NEW CHAT */
 
-function fileToBase64(file){
+$("newChat").onclick=()=>{
 
- return new Promise(
-  (resolve,reject)=>{
+ messages.innerHTML="";
 
-   const reader=
-    new FileReader();
+ addMessage(
+  "👋 Hello! I am SwiftCortex AI. How can I help you?"
+ );
 
-   reader.onload=
-    ()=>resolve(
-     reader.result
-    );
+ clearFile();
 
-   reader.onerror=
-    reject;
-
-   reader.readAsDataURL(file);
-  }
-);
+ userInput.focus();
+};
 
 
-/* =========================
-   NEW CHAT
-========================= */
+/* DARK MODE */
 
-$("newChat")?.addEventListener(
- "click",
- ()=>{
+$("themeBtn").onclick=()=>{
 
-  if(messages)
-   messages.innerHTML="";
+ document.body.classList.toggle(
+  "light-mode"
+ );
 
-  addMessage(
-   "👋 New chat started. How can I help you?",
-   "ai"
-  );
-
-  clearAttachment();
-
-  userInput?.focus();
- }
-);
-
-
-/* =========================
-   DARK MODE
-========================= */
-
-$("themeBtn")?.addEventListener(
- "click",
- ()=>{
-
-  document.body.classList.toggle(
+ const light=
+  document.body.classList.contains(
    "light-mode"
   );
 
-  const light=
-   document.body.classList.contains(
-    "light-mode"
-   );
-
-  $("themeBtn").textContent=
-   light
-    ?"☀️ Light Mode"
-    :"🌙 Dark Mode";
- }
-);
+ $("themeBtn").textContent=
+  light
+   ?"☀️ Light Mode"
+   :"🌙 Dark Mode";
+};
 
 
 console.log(
- "⚡ SwiftCortex AI Ultra Ready"
+ "⚡ SwiftCortex AI Ultra is ready"
 );
