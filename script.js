@@ -4,33 +4,27 @@ const $ = id => document.getElementById(id);
 
 const plusBtn = $("plusBtn");
 const plusMenu = $("plusMenu");
-
-const cameraBtn = $("cameraBtn");
-const photoBtn = $("photoBtn");
-const fileBtn = $("fileBtn");
-const pluginBtn = $("pluginBtn");
-const thinkBtn = $("thinkBtn");
-
-const imageInput = $("imageInput");
-const fileInput = $("fileInput");
-
 const userInput = $("userInput");
 const sendBtn = $("sendBtn");
 const messages = $("messages");
 const imagePreview = $("imagePreview");
 
+const imageInput = $("imageInput");
+const fileInput = $("fileInput");
+
 const cameraModal = $("cameraModal");
-const cameraClose = $("cameraClose");
 const cameraVideo = $("cameraVideo");
-const takePhoto = $("takePhoto");
-const switchCamera = $("switchCamera");
+const cameraClose = $("cameraClose");
+const cameraError = $("cameraError");
+const cameraErrorText = $("cameraErrorText");
 
 const photoMode = $("photoMode");
 const videoMode = $("videoMode");
+const takePhoto = $("takePhoto");
 const startRecord = $("startRecord");
 const stopRecord = $("stopRecord");
+const switchCamera = $("switchCamera");
 const recordTime = $("recordTime");
-const mediaResult = $("mediaResult");
 
 let selectedImage = null;
 let selectedVideo = null;
@@ -40,20 +34,89 @@ let cameraStream = null;
 let cameraFacing = "user";
 
 let recorder = null;
-let recordedChunks = [];
-let recordingSeconds = 0;
+let chunks = [];
 let recordingTimer = null;
+let recordingSeconds = 0;
 
-let thinkHarder = false;
 let sending = false;
+let thinkHarder = false;
+
+let conversation = [];
+
+const API_URL = "/api/gemini";
 
 
 /* =========================
-   SAFE TEXT
+   MESSAGE
 ========================= */
 
-function textOf(value) {
-    return value == null ? "" : String(value);
+function addMessage(text, type = "ai", attachment = null) {
+
+    if (!messages) return null;
+
+    const box = document.createElement("div");
+
+    box.className =
+        type === "user"
+            ? "user-message"
+            : "ai-message";
+
+    if (text) {
+        const t = document.createElement("div");
+        t.textContent = text;
+        box.appendChild(t);
+    }
+
+    if (attachment?.type === "image") {
+
+        const img = document.createElement("img");
+
+        img.src = attachment.url;
+        img.alt = "";
+
+        img.style.maxWidth = "280px";
+        img.style.maxHeight = "280px";
+        img.style.borderRadius = "14px";
+        img.style.display = "block";
+        img.style.marginTop = "8px";
+
+        box.appendChild(img);
+    }
+
+    if (attachment?.type === "video") {
+
+        const video = document.createElement("video");
+
+        video.src = attachment.url;
+        video.controls = true;
+        video.playsInline = true;
+
+        video.style.maxWidth = "300px";
+        video.style.maxHeight = "280px";
+        video.style.borderRadius = "14px";
+        video.style.display = "block";
+        video.style.marginTop = "8px";
+
+        box.appendChild(video);
+    }
+
+    if (attachment?.type === "file") {
+
+        const fileBox = document.createElement("div");
+
+        fileBox.textContent =
+            "📄 " + (attachment.name || "File");
+
+        fileBox.style.marginTop = "8px";
+
+        box.appendChild(fileBox);
+    }
+
+    messages.appendChild(box);
+
+    messages.scrollTop = messages.scrollHeight;
+
+    return box;
 }
 
 
@@ -63,7 +126,6 @@ function textOf(value) {
 
 plusBtn?.addEventListener("click", e => {
 
-    e.preventDefault();
     e.stopPropagation();
 
     plusMenu?.classList.toggle("show");
@@ -88,225 +150,33 @@ function closePlus() {
 
 
 /* =========================
-   MESSAGE
+   PHOTO
 ========================= */
 
-function addMessage(
-    text = "",
-    type = "ai",
-    attachment = null
-) {
-
-    if (!messages) return null;
-
-    const box = document.createElement("div");
-
-    box.className =
-        type === "user"
-            ? "user-message"
-            : "ai-message";
-
-
-    if (text) {
-
-        const textBox =
-            document.createElement("div");
-
-        textBox.textContent = text;
-
-        box.appendChild(textBox);
-    }
-
-
-    if (attachment?.type === "image") {
-
-        const img =
-            document.createElement("img");
-
-        img.src = attachment.url;
-
-        img.alt = "Uploaded image";
-
-        img.style.maxWidth = "280px";
-        img.style.maxHeight = "280px";
-        img.style.width = "auto";
-        img.style.height = "auto";
-        img.style.borderRadius = "14px";
-        img.style.display = "block";
-        img.style.marginTop = "8px";
-        img.style.objectFit = "contain";
-
-        box.appendChild(img);
-    }
-
-
-    if (attachment?.type === "video") {
-
-        const video =
-            document.createElement("video");
-
-        video.src = attachment.url;
-
-        video.controls = true;
-        video.playsInline = true;
-
-        video.style.maxWidth = "300px";
-        video.style.maxHeight = "280px";
-        video.style.borderRadius = "14px";
-        video.style.display = "block";
-        video.style.marginTop = "8px";
-
-        box.appendChild(video);
-    }
-
-
-    if (attachment?.type === "file") {
-
-        const fileBox =
-            document.createElement("div");
-
-        fileBox.textContent =
-            "📄 " + attachment.name;
-
-        fileBox.style.marginTop = "8px";
-
-        box.appendChild(fileBox);
-    }
-
-
-    messages.appendChild(box);
-
-    messages.scrollTop =
-        messages.scrollHeight;
-
-    return box;
-}
-
-
-/* =========================
-   PREVIEW
-========================= */
-
-function showPreview(file, type = "file") {
-
-    if (!imagePreview) return;
-
-    imagePreview.innerHTML = "";
-
-    const box =
-        document.createElement("div");
-
-    box.style.display = "flex";
-    box.style.alignItems = "center";
-    box.style.gap = "10px";
-    box.style.padding = "8px";
-    box.style.borderRadius = "12px";
-
-
-    /*
-       IMAGE:
-       DON'T SHOW FILE NAME
-    */
-
-    if (type === "image") {
-
-        const img =
-            document.createElement("img");
-
-        img.src =
-            URL.createObjectURL(file);
-
-        img.style.width = "64px";
-        img.style.height = "64px";
-        img.style.objectFit = "cover";
-        img.style.borderRadius = "10px";
-
-        box.appendChild(img);
-
-    } else {
-
-        const name =
-            document.createElement("span");
-
-        name.textContent =
-            type === "video"
-                ? "🎥 Video ready"
-                : "📄 " + file.name;
-
-        name.style.color = "white";
-        name.style.flex = "1";
-
-        box.appendChild(name);
-    }
-
-
-    const remove =
-        document.createElement("button");
-
-    remove.type = "button";
-    remove.textContent = "✕";
-
-    remove.style.border = "0";
-    remove.style.background = "#374151";
-    remove.style.color = "white";
-    remove.style.borderRadius = "8px";
-    remove.style.padding = "6px 9px";
-
-    remove.onclick = clearAttachments;
-
-    box.appendChild(remove);
-
-    imagePreview.appendChild(box);
-}
-
-
-/* =========================
-   CLEAR ATTACHMENTS
-========================= */
-
-function clearAttachments() {
-
-    selectedImage = null;
-    selectedVideo = null;
-    selectedFile = null;
-
-    if (imageInput)
-        imageInput.value = "";
-
-    if (fileInput)
-        fileInput.value = "";
-
-    if (imagePreview)
-        imagePreview.innerHTML = "";
-}
-
-
-/* =========================
-   PHOTOS
-========================= */
-
-photoBtn?.addEventListener("click", () => {
+$("photoBtn")?.addEventListener("click", () => {
 
     closePlus();
 
-    if (!imageInput) return;
+    if (imageInput) {
 
-    imageInput.value = "";
-    imageInput.click();
+        imageInput.value = "";
+
+        imageInput.click();
+    }
 });
 
 
 imageInput?.addEventListener("change", () => {
 
-    const file =
-        imageInput.files?.[0];
+    const file = imageInput.files?.[0];
 
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
 
         addMessage(
-            "⚠️ Please select an image."
+            "⚠️ Please select an image.",
+            "ai"
         );
 
         return;
@@ -321,86 +191,181 @@ imageInput?.addEventListener("change", () => {
 
 
 /* =========================
-   FILES
+   FILE
 ========================= */
 
-fileBtn?.addEventListener("click", () => {
+$("fileBtn")?.addEventListener("click", () => {
 
     closePlus();
 
-    if (!fileInput) return;
+    if (fileInput) {
 
-    fileInput.value = "";
-    fileInput.click();
+        fileInput.value = "";
+
+        fileInput.click();
+    }
 });
 
 
 fileInput?.addEventListener("change", () => {
 
-    const file =
-        fileInput.files?.[0];
+    const file = fileInput.files?.[0];
 
     if (!file) return;
 
+    selectedImage = null;
+    selectedVideo = null;
+    selectedFile = null;
 
     if (file.type.startsWith("image/")) {
 
         selectedImage = file;
-        selectedVideo = null;
-        selectedFile = null;
 
         showPreview(file, "image");
 
         return;
     }
 
-
     if (file.type.startsWith("video/")) {
 
         selectedVideo = file;
-        selectedImage = null;
-        selectedFile = null;
 
         showPreview(file, "video");
 
         return;
     }
 
-
     selectedFile = file;
-    selectedImage = null;
-    selectedVideo = null;
 
     showPreview(file, "file");
 });
 
 
 /* =========================
-   CAMERA OPEN
+   PREVIEW
 ========================= */
 
-cameraBtn?.addEventListener("click", async () => {
+function showPreview(file, type) {
 
-    closePlus();
+    if (!imagePreview) return;
 
-    if (!cameraModal) {
+    imagePreview.innerHTML = "";
 
-        addMessage(
-            "❌ Camera is unavailable."
-        );
+    const box = document.createElement("div");
 
-        return;
+    box.style.display = "flex";
+    box.style.alignItems = "center";
+    box.style.gap = "10px";
+    box.style.padding = "8px";
+    box.style.borderRadius = "12px";
+    box.style.background = "#111827";
+
+
+    if (type === "image") {
+
+        const img = document.createElement("img");
+
+        img.src = URL.createObjectURL(file);
+
+        img.style.width = "60px";
+        img.style.height = "60px";
+        img.style.objectFit = "cover";
+        img.style.borderRadius = "10px";
+
+        box.appendChild(img);
     }
 
-    cameraModal.classList.add("show");
 
-    await startCamera();
-});
+    if (type === "video") {
+
+        const video = document.createElement("video");
+
+        video.src = URL.createObjectURL(file);
+
+        video.muted = true;
+        video.controls = true;
+
+        video.style.width = "90px";
+        video.style.height = "60px";
+        video.style.objectFit = "cover";
+        video.style.borderRadius = "10px";
+
+        box.appendChild(video);
+    }
+
+
+    const name = document.createElement("span");
+
+    /*
+      এখানে শুধু preview-তে generic নাম দেখানো হচ্ছে।
+      camera.photo.jpg / আসল filename AI message-এ
+      আর দেখানো হবে না।
+    */
+
+    name.textContent =
+        type === "image"
+            ? "🖼 Image attached"
+            : type === "video"
+                ? "🎥 Video attached"
+                : "📄 File attached";
+
+    name.style.color = "white";
+    name.style.flex = "1";
+
+    box.appendChild(name);
+
+
+    const remove = document.createElement("button");
+
+    remove.textContent = "✕";
+    remove.type = "button";
+
+    remove.style.border = "0";
+    remove.style.background = "#374151";
+    remove.style.color = "white";
+    remove.style.borderRadius = "8px";
+    remove.style.padding = "6px 9px";
+
+    remove.onclick = clearAttachment;
+
+    box.appendChild(remove);
+
+    imagePreview.appendChild(box);
+}
+
+
+/* =========================
+   CLEAR ATTACHMENT
+========================= */
+
+function clearAttachment() {
+
+    selectedImage = null;
+    selectedVideo = null;
+    selectedFile = null;
+
+    if (imageInput) imageInput.value = "";
+    if (fileInput) fileInput.value = "";
+
+    if (imagePreview) {
+        imagePreview.innerHTML = "";
+    }
+}
 
 
 /* =========================
    CAMERA
 ========================= */
+
+$("cameraBtn")?.addEventListener("click", async () => {
+
+    closePlus();
+
+    cameraModal?.classList.add("show");
+
+    await startCamera();
+});
+
 
 async function startCamera() {
 
@@ -411,8 +376,8 @@ async function startCamera() {
         !navigator.mediaDevices.getUserMedia
     ) {
 
-        addMessage(
-            "❌ Camera is not supported by this browser."
+        showCameraError(
+            "Camera is not supported by this browser."
         );
 
         return;
@@ -425,17 +390,9 @@ async function startCamera() {
             await navigator.mediaDevices.getUserMedia({
 
                 video: {
-                    facingMode: {
-                        ideal: cameraFacing
-                    },
-
-                    width: {
-                        ideal: 1280
-                    },
-
-                    height: {
-                        ideal: 720
-                    }
+                    facingMode: cameraFacing,
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
                 },
 
                 audio: true
@@ -447,26 +404,68 @@ async function startCamera() {
             cameraVideo.srcObject =
                 cameraStream;
 
+            cameraVideo.muted = true;
+
             await cameraVideo.play();
         }
 
+
+        cameraError?.classList.remove("show");
+
     } catch (error) {
 
-        console.error(
-            "Camera error:",
-            error
-        );
+        console.error("Camera error:", error);
 
-        addMessage(
-            "❌ Camera permission or device error."
+        showCameraError(
+            getCameraError(error)
         );
     }
 }
 
 
+function showCameraError(message) {
+
+    cameraError?.classList.add("show");
+
+    if (cameraErrorText) {
+        cameraErrorText.textContent = message;
+    }
+}
+
+
+function getCameraError(error) {
+
+    if (error?.name === "NotAllowedError") {
+        return "Camera permission was denied. Please allow camera access.";
+    }
+
+    if (error?.name === "NotFoundError") {
+        return "No camera was found on this device.";
+    }
+
+    if (error?.name === "NotReadableError") {
+        return "Camera is being used by another app.";
+    }
+
+    return "Camera permission or device error.";
+}
+
+
 /* =========================
-   STOP CAMERA
+   CLOSE CAMERA
 ========================= */
+
+cameraClose?.addEventListener("click", closeCamera);
+
+
+function closeCamera() {
+
+    stopRecording();
+    stopCamera();
+
+    cameraModal?.classList.remove("show");
+}
+
 
 function stopCamera() {
 
@@ -479,34 +478,9 @@ function stopCamera() {
         cameraStream = null;
     }
 
-    if (cameraVideo)
+    if (cameraVideo) {
         cameraVideo.srcObject = null;
-}
-
-
-/* =========================
-   CLOSE CAMERA
-========================= */
-
-cameraClose?.addEventListener(
-    "click",
-    closeCamera
-);
-
-
-function closeCamera() {
-
-    if (recorder &&
-        recorder.state !== "inactive") {
-
-        try {
-            recorder.stop();
-        } catch {}
     }
-
-    stopCamera();
-
-    cameraModal?.classList.remove("show");
 }
 
 
@@ -514,94 +488,75 @@ function closeCamera() {
    SWITCH CAMERA
 ========================= */
 
-switchCamera?.addEventListener(
-    "click",
-    async () => {
+switchCamera?.addEventListener("click", async () => {
 
-        cameraFacing =
-            cameraFacing === "user"
-                ? "environment"
-                : "user";
+    cameraFacing =
+        cameraFacing === "user"
+            ? "environment"
+            : "user";
 
-        await startCamera();
-    }
-);
+    await startCamera();
+});
 
 
 /* =========================
    PHOTO MODE
 ========================= */
 
-photoMode?.addEventListener(
-    "click",
-    async () => {
+photoMode?.addEventListener("click", async () => {
 
-        photoMode.classList.add("active");
-        videoMode?.classList.remove("active");
+    photoMode.classList.add("active");
+    videoMode?.classList.remove("active");
 
-        if (takePhoto)
-            takePhoto.style.display =
-                "inline-flex";
+    if (takePhoto)
+        takePhoto.style.display = "inline-flex";
 
-        if (startRecord)
-            startRecord.style.display =
-                "none";
+    if (startRecord)
+        startRecord.style.display = "none";
 
-        if (stopRecord)
-            stopRecord.style.display =
-                "none";
+    if (stopRecord)
+        stopRecord.style.display = "none";
 
-        await startCamera();
-    }
-);
+    await startCamera();
+});
 
 
 /* =========================
    VIDEO MODE
 ========================= */
 
-videoMode?.addEventListener(
-    "click",
-    async () => {
+videoMode?.addEventListener("click", async () => {
 
-        videoMode.classList.add("active");
-        photoMode?.classList.remove("active");
+    videoMode.classList.add("active");
+    photoMode?.classList.remove("active");
 
-        if (takePhoto)
-            takePhoto.style.display =
-                "none";
+    if (takePhoto)
+        takePhoto.style.display = "none";
 
-        if (startRecord)
-            startRecord.style.display =
-                "inline-flex";
+    if (startRecord)
+        startRecord.style.display = "inline-flex";
 
-        if (stopRecord)
-            stopRecord.style.display =
-                "none";
+    if (stopRecord)
+        stopRecord.style.display = "none";
 
-        await startCamera();
-    }
-);
+    await startCamera();
+});
 
 
 /* =========================
    TAKE PHOTO
 ========================= */
 
-takePhoto?.addEventListener(
-    "click",
-    capturePhoto
-);
+takePhoto?.addEventListener("click", capturePhoto);
 
 
 function capturePhoto() {
 
-    if (!cameraVideo) return;
-
-    if (!cameraStream) {
+    if (!cameraStream || !cameraVideo) {
 
         addMessage(
-            "⚠️ Camera is not ready."
+            "⚠️ Camera is not ready.",
+            "ai"
         );
 
         return;
@@ -633,35 +588,30 @@ function capturePhoto() {
     );
 
 
-    canvas.toBlob(
-        blob => {
+    canvas.toBlob(blob => {
 
-            if (!blob) return;
+        if (!blob) return;
 
-            selectedImage =
-                new File(
-                    [blob],
-                    "camera-photo.jpg",
-                    {
-                        type:
-                            "image/jpeg"
-                    }
-                );
 
-            selectedVideo = null;
-            selectedFile = null;
-
-            showPreview(
-                selectedImage,
-                "image"
+        const file =
+            new File(
+                [blob],
+                "photo.jpg",
+                {
+                    type: "image/jpeg"
+                }
             );
 
-            closeCamera();
 
-        },
-        "image/jpeg",
-        0.85
-    );
+        selectedImage = file;
+        selectedVideo = null;
+        selectedFile = null;
+
+        showPreview(file, "image");
+
+        closeCamera();
+
+    }, "image/jpeg", 0.82);
 }
 
 
@@ -671,17 +621,11 @@ function capturePhoto() {
 
 function getVideoMime() {
 
-    if (!window.MediaRecorder)
-        return "";
+    if (!window.MediaRecorder) return "";
 
     const types = [
-
-        "video/webm;codecs=vp9,opus",
-
         "video/webm;codecs=vp8,opus",
-
         "video/webm"
-
     ];
 
     for (const type of types) {
@@ -698,7 +642,7 @@ function getVideoMime() {
 
 
 /* =========================
-   START RECORD
+   START RECORDING
 ========================= */
 
 startRecord?.addEventListener(
@@ -712,7 +656,8 @@ function startRecording() {
     if (!cameraStream) {
 
         addMessage(
-            "⚠️ Camera is not ready."
+            "⚠️ Camera is not ready.",
+            "ai"
         );
 
         return;
@@ -722,14 +667,15 @@ function startRecording() {
     if (!window.MediaRecorder) {
 
         addMessage(
-            "❌ Video recording is not supported."
+            "❌ Video recording is not supported by this browser.",
+            "ai"
         );
 
         return;
     }
 
 
-    recordedChunks = [];
+    chunks = [];
 
 
     const mime =
@@ -742,9 +688,7 @@ function startRecording() {
             mime
                 ? new MediaRecorder(
                     cameraStream,
-                    {
-                        mimeType: mime
-                    }
+                    { mimeType: mime }
                 )
                 : new MediaRecorder(
                     cameraStream
@@ -755,32 +699,29 @@ function startRecording() {
         console.error(error);
 
         addMessage(
-            "❌ Could not start video recording."
+            "❌ Unable to start video recording.",
+            "ai"
         );
 
         return;
     }
 
 
-    recorder.ondataavailable =
-        e => {
+    recorder.ondataavailable = event => {
 
-            if (
-                e.data &&
-                e.data.size > 0
-            ) {
-
-                recordedChunks.push(e.data);
-            }
-        };
+        if (
+            event.data &&
+            event.data.size > 0
+        ) {
+            chunks.push(event.data);
+        }
+    };
 
 
-    recorder.onstop =
-        finishRecording;
+    recorder.onstop = finishRecording;
 
 
     recorder.start(1000);
-
 
     recordingSeconds = 0;
 
@@ -794,20 +735,13 @@ function startRecording() {
 
             updateRecordTime();
 
-        },1000);
+        }, 1000);
 
 
     recordTime?.classList.add("show");
 
-
-    if (startRecord)
-        startRecord.style.display =
-            "none";
-
-    if (stopRecord)
-        stopRecord.style.display =
-            "inline-flex";
-
+    startRecord.style.display = "none";
+    stopRecord.style.display = "inline-flex";
 
     if (switchCamera)
         switchCamera.disabled = true;
@@ -815,7 +749,7 @@ function startRecording() {
 
 
 /* =========================
-   RECORD TIMER
+   RECORD TIME
 ========================= */
 
 function updateRecordTime() {
@@ -823,18 +757,14 @@ function updateRecordTime() {
     if (!recordTime) return;
 
     const min =
-        Math.floor(
-            recordingSeconds / 60
-        )
+        Math.floor(recordingSeconds / 60)
         .toString()
-        .padStart(2,"0");
-
+        .padStart(2, "0");
 
     const sec =
         (recordingSeconds % 60)
         .toString()
-        .padStart(2,"0");
-
+        .padStart(2, "0");
 
     recordTime.textContent =
         `🔴 ${min}:${sec}`;
@@ -842,7 +772,7 @@ function updateRecordTime() {
 
 
 /* =========================
-   STOP RECORD
+   STOP RECORDING
 ========================= */
 
 stopRecord?.addEventListener(
@@ -855,9 +785,7 @@ function stopRecording() {
 
     if (recordingTimer) {
 
-        clearInterval(
-            recordingTimer
-        );
+        clearInterval(recordingTimer);
 
         recordingTimer = null;
     }
@@ -874,16 +802,17 @@ function stopRecording() {
 
     recordTime?.classList.remove("show");
 
-
     if (stopRecord)
-        stopRecord.style.display =
-            "none";
+        stopRecord.style.display = "none";
 
+    if (
+        videoMode?.classList.contains("active")
+    ) {
 
-    if (startRecord)
-        startRecord.style.display =
-            "inline-flex";
-
+        if (startRecord)
+            startRecord.style.display =
+                "inline-flex";
+    }
 
     if (switchCamera)
         switchCamera.disabled = false;
@@ -896,541 +825,192 @@ function stopRecording() {
 
 function finishRecording() {
 
-    if (!recordedChunks.length)
+    if (!chunks.length) {
+
+        addMessage(
+            "❌ Video recording was empty.",
+            "ai"
+        );
+
         return;
+    }
 
 
-    const type =
+    const mime =
         recorder?.mimeType ||
         "video/webm";
 
 
     const blob =
         new Blob(
-            recordedChunks,
-            {
-                type
-            }
+            chunks,
+            { type: mime }
         );
 
 
-    selectedVideo =
+    /*
+      Size limit check.
+      খুব বড় ভিডিও সরাসরি API-তে পাঠানো হবে না।
+    */
+
+    const maxVideoSize =
+        18 * 1024 * 1024;
+
+
+    if (blob.size > maxVideoSize) {
+
+        addMessage(
+            "⚠️ Video is too large. Please record a shorter video.",
+            "ai"
+        );
+
+        chunks = [];
+
+        return;
+    }
+
+
+    const file =
         new File(
             [blob],
-            "swiftcortex-video.webm",
+            "video.webm",
             {
-                type
+                type: mime
             }
         );
 
 
+    selectedVideo = file;
     selectedImage = null;
     selectedFile = null;
 
 
-    showPreview(
-        selectedVideo,
-        "video"
-    );
+    showPreview(file, "video");
 
 
-    if (mediaResult) {
-
-        mediaResult.innerHTML = "";
-
-        const video =
-            document.createElement("video");
-
-        video.src =
-            URL.createObjectURL(
-                selectedVideo
-            );
-
-        video.controls = true;
-        video.playsInline = true;
-
-        mediaResult.appendChild(video);
-    }
-
-
-    recordedChunks = [];
+    chunks = [];
 }
+Part 2
 /* =========================
-   IMAGE COMPRESSION
+   THINK HARDER
 ========================= */
 
-function compressImage(file){
+$("thinkBtn")?.addEventListener("click", () => {
 
-    return new Promise((resolve,reject)=>{
+    thinkHarder = !thinkHarder;
 
-        const img=new Image();
+    const btn = $("thinkBtn");
 
-        img.onload=()=>{
+    if (thinkHarder) {
 
-            const max=1000;
+        btn.textContent =
+            "🧠 Think Harder ✓";
 
-            let w=img.width;
-            let h=img.height;
+        btn.style.background =
+            "#00e5ff";
 
-            if(w>max){
+        btn.style.color =
+            "#001018";
 
-                h=Math.round(h*max/w);
-                w=max;
-            }
+    } else {
 
-            if(h>max){
+        btn.textContent =
+            "🧠 Think Harder";
 
-                w=Math.round(w*max/h);
-                h=max;
-            }
+        btn.style.background = "";
+        btn.style.color = "";
+    }
 
-            const canvas=
-                document.createElement("canvas");
-
-            canvas.width=w;
-            canvas.height=h;
-
-            const ctx=
-                canvas.getContext("2d");
-
-            ctx.drawImage(
-                img,
-                0,
-                0,
-                w,
-                h
-            );
-
-            resolve(
-                canvas.toDataURL(
-                    "image/jpeg",
-                    0.65
-                )
-            );
-
-            URL.revokeObjectURL(img.src);
-        };
-
-        img.onerror=reject;
-
-        img.src=
-            URL.createObjectURL(file);
-    });
-}
+    closePlus();
+});
 
 
 /* =========================
-   VIDEO FRAME
+   PLUGINS
 ========================= */
 
-async function getVideoFrames(file){
+$("pluginBtn")?.addEventListener("click", () => {
 
-    return new Promise(resolve=>{
+    closePlus();
 
-        const video=
-            document.createElement("video");
+    const modal = $("pluginsModal");
 
-        const url=
-            URL.createObjectURL(file);
+    if (modal) {
 
-        video.src=url;
-        video.muted=true;
-        video.playsInline=true;
+        modal.classList.add("show");
 
-        video.onloadedmetadata=()=>{
+    } else {
 
-            const duration=
-                video.duration || 1;
-
-            const times=[
-                0,
-                duration/2,
-                Math.max(0,duration-0.2)
-            ];
-
-            const frames=[];
-
-            let index=0;
-
-            function capture(){
-
-                if(index>=times.length){
-
-                    URL.revokeObjectURL(url);
-                    resolve(frames);
-                    return;
-                }
-
-                video.currentTime=
-                    times[index];
-
-                video.onseeked=()=>{
-
-                    const canvas=
-                        document.createElement("canvas");
-
-                    const max=640;
-
-                    let w=
-                        video.videoWidth || 640;
-
-                    let h=
-                        video.videoHeight || 360;
-
-                    if(w>max){
-
-                        h=Math.round(h*max/w);
-                        w=max;
-                    }
-
-                    canvas.width=w;
-                    canvas.height=h;
-
-                    const ctx=
-                        canvas.getContext("2d");
-
-                    ctx.drawImage(
-                        video,
-                        0,
-                        0,
-                        w,
-                        h
-                    );
-
-                    frames.push(
-                        canvas.toDataURL(
-                            "image/jpeg",
-                            0.55
-                        )
-                    );
-
-                    index++;
-
-                    capture();
-                };
-            }
-
-            capture();
-        };
-
-        video.onerror=()=>{
-
-            URL.revokeObjectURL(url);
-            resolve([]);
-        };
-    });
-}
-
-
-/* =========================
-   LANGUAGE
-========================= */
-
-function detectLanguage(text){
-
-    if(!text)
-        return "English";
-
-    if(/[অ-হ]/.test(text))
-        return "Bengali";
-
-    if(/[ا-ي]/.test(text))
-        return "Arabic";
-
-    if(/[अ-ह]/.test(text))
-        return "Hindi";
-
-    if(/[ก-๙]/.test(text))
-        return "Thai";
-
-    if(/[一-龯]/.test(text))
-        return "Chinese";
-
-    if(/[ぁ-んァ-ン]/.test(text))
-        return "Japanese";
-
-    if(/[가-힣]/.test(text))
-        return "Korean";
-
-    return "English";
-}
-
-
-/* =========================
-   SEND
-========================= */
-
-sendBtn?.addEventListener(
-    "click",
-    sendMessage
-);
-
-
-async function sendMessage(){
-
-    if(sending)
-        return;
-
-    const text=
-        userInput?.value.trim() || "";
-
-
-    if(
-        !text &&
-        !selectedImage &&
-        !selectedVideo &&
-        !selectedFile
-    ){
-        return;
-    }
-
-
-    sending=true;
-
-
-    if(sendBtn)
-        sendBtn.disabled=true;
-
-
-    let attachment=null;
-
-
-    /* IMAGE */
-
-    if(selectedImage){
-
-        attachment={
-            type:"image",
-            url:
-                URL.createObjectURL(
-                    selectedImage
-                )
-        };
-    }
-
-
-    /* VIDEO */
-
-    else if(selectedVideo){
-
-        attachment={
-            type:"video",
-            url:
-                URL.createObjectURL(
-                    selectedVideo
-                )
-        };
-    }
-
-
-    /* FILE */
-
-    else if(selectedFile){
-
-        attachment={
-            type:"file",
-            name:selectedFile.name
-        };
-    }
-
-
-    addMessage(
-        text ||
-        (
-            selectedImage
-                ? "🖼 Image"
-                : selectedVideo
-                    ? "🎥 Video"
-                    : "📄 File"
-        ),
-        "user",
-        attachment
-    );
-
-
-    if(userInput)
-        userInput.value="";
-
-
-    const thinkingMessage=
         addMessage(
-            "Thinking...",
+            "🧩 Plugins panel is not available.",
+            "ai"
+        );
+    }
+});
+
+
+$("pluginsClose")?.addEventListener("click", () => {
+
+    $("pluginsModal")?.classList.remove("show");
+
+});
+
+
+document.querySelectorAll(".plugin-option")
+.forEach(button => {
+
+    button.addEventListener("click", () => {
+
+        addMessage(
+            "🧩 " +
+            button.textContent.trim() +
+            " selected.",
             "ai"
         );
 
-
-    try{
-
-        let image=null;
-        let videoFrames=[];
+        $("pluginsModal")?.classList.remove("show");
+    });
+});
 
 
-        /*
-         IMAGE
-        */
+/* =========================
+   TEXT AREA
+========================= */
 
-        if(selectedImage){
+function resizeInput() {
 
-            image=
-                await compressImage(
-                    selectedImage
-                );
-        }
+    if (!userInput) return;
 
+    userInput.style.height = "auto";
 
-        /*
-         VIDEO
-        */
-
-        if(selectedVideo){
-
-            videoFrames=
-                await getVideoFrames(
-                    selectedVideo
-                );
-        }
-
-
-        /*
-         FILE
-        */
-
-        let fileInfo=null;
-
-        if(selectedFile){
-
-            fileInfo={
-                name:selectedFile.name,
-                type:selectedFile.type,
-                size:selectedFile.size
-            };
-        }
-
-
-        const payload={
-
-            message:text,
-
-            image:image,
-
-            videoFrames:videoFrames,
-
-            file:fileInfo,
-
-            thinkHarder:thinkHarder,
-
-            language:
-                detectLanguage(text),
-
-            clientDate:
-                new Date().toISOString(),
-
-            timezone:
-                Intl.DateTimeFormat()
-                    .resolvedOptions()
-                    .timeZone
-        };
-
-
-        const response=
-            await fetch(
-                "/api/gemini",
-                {
-                    method:"POST",
-
-                    headers:{
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body:
-                        JSON.stringify(
-                            payload
-                        )
-                }
-            );
-
-
-        let data=null;
-
-        try{
-
-            data=
-                await response.json();
-
-        }catch{
-
-            throw new Error(
-                "Invalid server response."
-            );
-        }
-
-
-        if(!response.ok){
-
-            throw new Error(
-                data?.error ||
-                `Server error: ${response.status}`
-            );
-        }
-
-
-        let reply=
-            data?.text ||
-            data?.reply ||
-            data?.message ||
-            "No response from AI.";
-
-
-        if(
-            typeof reply!=="string"
-        ){
-
-            reply=
-                JSON.stringify(reply);
-        }
-
-
-        if(thinkingMessage){
-
-            thinkingMessage.textContent=
-                reply;
-        }
-
-
-    }catch(error){
-
-        console.error(
-            "SwiftCortex:",
-            error
-        );
-
-
-        if(thinkingMessage){
-
-            thinkingMessage.textContent=
-                "❌ Connection error: "+
-                error.message;
-        }
-    }
-
-
-    clearAttachments();
-
-
-    if(userInput){
-
-        userInput.style.height=
-            "auto";
-    }
-
-
-    sending=false;
-
-
-    if(sendBtn)
-        sendBtn.disabled=false;
+    userInput.style.height =
+        Math.min(
+            userInput.scrollHeight,
+            150
+        ) + "px";
 }
+
+
+userInput?.addEventListener(
+    "input",
+    resizeInput
+);
+
+
+/* =========================
+   QUICK ASK
+========================= */
+
+window.quickAsk = function(text) {
+
+    if (!userInput) return;
+
+    userInput.value = text;
+
+    resizeInput();
+
+    sendMessage();
+};
 
 
 /* =========================
@@ -1439,14 +1019,14 @@ async function sendMessage(){
 
 userInput?.addEventListener(
     "keydown",
-    e=>{
+    event => {
 
-        if(
-            e.key==="Enter" &&
-            !e.shiftKey
-        ){
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey
+        ) {
 
-            e.preventDefault();
+            event.preventDefault();
 
             sendMessage();
         }
@@ -1455,180 +1035,560 @@ userInput?.addEventListener(
 
 
 /* =========================
-   TEXT RESIZE
+   SEND BUTTON
 ========================= */
 
-userInput?.addEventListener(
-    "input",
-    ()=>{
-
-        userInput.style.height=
-            "auto";
-
-        userInput.style.height=
-            Math.min(
-                userInput.scrollHeight,
-                150
-            )+"px";
-    }
+sendBtn?.addEventListener(
+    "click",
+    sendMessage
 );
 
 
 /* =========================
-   THINK HARDER
+   FILE TO BASE64
 ========================= */
 
-thinkBtn?.addEventListener(
-    "click",
-    ()=>{
+function fileToBase64(file) {
 
-        thinkHarder=
-            !thinkHarder;
+    return new Promise((resolve, reject) => {
 
+        const reader =
+            new FileReader();
 
-        thinkBtn.textContent=
-            thinkHarder
-                ? "🧠 Think Harder ✓"
-                : "🧠 Think Harder";
+        reader.onload = () => {
 
+            const result =
+                String(reader.result || "");
 
-        closePlus();
-    }
-);
+            const comma =
+                result.indexOf(",");
 
-
-/* =========================
-   PLUGINS
-========================= */
-
-pluginBtn?.addEventListener(
-    "click",
-    ()=>{
-
-        closePlus();
-
-        const existing=
-            document.getElementById(
-                "pluginPanel"
+            resolve(
+                comma >= 0
+                    ? result.slice(comma + 1)
+                    : result
             );
+        };
 
-        if(existing){
+        reader.onerror = reject;
 
-            existing.remove();
-            return;
+        reader.readAsDataURL(file);
+    });
+}
+
+
+/* =========================
+   SEND MESSAGE
+========================= */
+
+async function sendMessage() {
+
+    if (sending) return;
+
+
+    const text =
+        userInput?.value.trim() || "";
+
+
+    if (
+        !text &&
+        !selectedImage &&
+        !selectedVideo &&
+        !selectedFile
+    ) {
+        return;
+    }
+
+
+    sending = true;
+
+    if (sendBtn)
+        sendBtn.disabled = true;
+
+
+    let attachment = null;
+
+
+    if (selectedImage) {
+
+        attachment = {
+
+            type: "image",
+
+            url:
+                URL.createObjectURL(
+                    selectedImage
+                )
+        };
+
+    } else if (selectedVideo) {
+
+        attachment = {
+
+            type: "video",
+
+            url:
+                URL.createObjectURL(
+                    selectedVideo
+                )
+        };
+
+    } else if (selectedFile) {
+
+        attachment = {
+
+            type: "file",
+
+            name: "File attached"
+        };
+    }
+
+
+    /*
+      User message immediately appears.
+    */
+
+    addMessage(
+        text || "",
+        "user",
+        attachment
+    );
+
+
+    if (userInput) {
+
+        userInput.value = "";
+
+        userInput.style.height = "auto";
+    }
+
+
+    const oldImage = selectedImage;
+    const oldVideo = selectedVideo;
+    const oldFile = selectedFile;
+
+
+    /*
+      Clear UI immediately.
+    */
+
+    clearAttachment();
+
+
+    let typingBox =
+        addMessage(
+            "Thinking…",
+            "ai"
+        );
+
+
+    try {
+
+        const body = {
+
+            message: text,
+
+            thinkHarder,
+
+            language:
+                detectLanguage(text),
+
+            history:
+                conversation.slice(-8)
+        };
+
+
+        /*
+          Image
+        */
+
+        if (oldImage) {
+
+            body.image = {
+                data:
+                    await fileToBase64(
+                        oldImage
+                    ),
+                mimeType:
+                    oldImage.type
+            };
         }
 
 
-        const panel=
-            document.createElement("div");
+        /*
+          Video
+          Do NOT send giant files blindly.
+        */
 
-        panel.id="pluginPanel";
+        if (oldVideo) {
 
-        panel.style.position="fixed";
-        panel.style.right="20px";
-        panel.style.bottom="90px";
-        panel.style.width="280px";
-        panel.style.maxWidth="calc(100vw - 40px)";
-        panel.style.background="#0f172a";
-        panel.style.color="white";
-        panel.style.padding="18px";
-        panel.style.borderRadius="18px";
-        panel.style.zIndex="10000";
-        panel.style.boxShadow=
-            "0 15px 50px rgba(0,0,0,.5)";
+            if (
+                oldVideo.size >
+                18 * 1024 * 1024
+            ) {
 
-
-        panel.innerHTML=`
-
-            <h3 style="margin-top:0">
-                🧩 Plugins
-            </h3>
-
-            <button data-plugin="web">
-                🌐 Web Search
-            </button>
-
-            <button data-plugin="news">
-                📰 Real-time News
-            </button>
-
-            <button data-plugin="calculator">
-                🧮 Calculator
-            </button>
-
-            <button data-plugin="weather">
-                🌦️ Weather
-            </button>
-
-            <button data-plugin="files">
-                📄 File Tools
-            </button>
-
-            <button data-plugin="image">
-                🖼️ Image Tools
-            </button>
-
-        `;
+                throw new Error(
+                    "Video is too large. Please record a shorter video."
+                );
+            }
 
 
-        panel.querySelectorAll(
-            "button"
-        ).forEach(btn=>{
+            body.video = {
 
-            btn.style.width="100%";
-            btn.style.padding="11px";
-            btn.style.marginTop="8px";
-            btn.style.border="0";
-            btn.style.borderRadius="10px";
-            btn.style.background="#1e293b";
-            btn.style.color="white";
-            btn.style.cursor="pointer";
+                data:
+                    await fileToBase64(
+                        oldVideo
+                    ),
 
-
-            btn.onclick=()=>{
-
-                const name=
-                    btn.dataset.plugin;
-
-                if(name==="news"){
-
-                    userInput.value=
-                        "What are today's latest news?";
-
-                }else if(name==="web"){
-
-                    userInput.value=
-                        "Search the web for the latest information about ";
-
-                }else if(name==="calculator"){
-
-                    userInput.value=
-                        "Calculate ";
-
-                }else if(name==="weather"){
-
-                    userInput.value=
-                        "What is the current weather in ";
-
-                }else{
-
-                    addMessage(
-                        "🧩 "+name+
-                        " plugin selected."
-                    );
-                }
-
-
-                panel.remove();
-
-                userInput?.focus();
+                mimeType:
+                    oldVideo.type
             };
+        }
+
+
+        /*
+          File
+        */
+
+        if (oldFile) {
+
+            if (
+                oldFile.size >
+                10 * 1024 * 1024
+            ) {
+
+                throw new Error(
+                    "File is too large. Please upload a smaller file."
+                );
+            }
+
+
+            body.file = {
+
+                name:
+                    oldFile.name,
+
+                mimeType:
+                    oldFile.type ||
+                    "application/octet-stream",
+
+                data:
+                    await fileToBase64(
+                        oldFile
+                    )
+            };
+        }
+
+
+        /*
+          Abort timeout.
+          Prevents "Thinking…" forever.
+        */
+
+        const controller =
+            new AbortController();
+
+        const timeout =
+            setTimeout(
+                () => controller.abort(),
+                60000
+            );
+
+
+        const response =
+            await fetch(
+                API_URL,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify(body),
+
+                    signal:
+                        controller.signal
+                }
+            );
+
+
+        clearTimeout(timeout);
+
+
+        const raw =
+            await response.text();
+
+
+        let data = null;
+
+
+        try {
+
+            data =
+                raw
+                    ? JSON.parse(raw)
+                    : null;
+
+        } catch {
+
+            data = null;
+        }
+
+
+        if (!response.ok) {
+
+            let message =
+                data?.error ||
+                data?.message ||
+                `Server error: ${response.status}`;
+
+
+            if (response.status === 413) {
+
+                message =
+                    "The upload is too large. Please send a shorter video or smaller file.";
+            }
+
+
+            throw new Error(message);
+        }
+
+
+        const answer =
+            data?.reply ||
+            data?.response ||
+            data?.text ||
+            data?.message ||
+            data?.content ||
+            "I couldn't generate a response.";
+
+
+        /*
+          Remove Thinking…
+        */
+
+        if (typingBox) {
+
+            typingBox.remove();
+        }
+
+
+        addMessage(
+            answer,
+            "ai"
+        );
+
+
+        /*
+          Save conversation.
+        */
+
+        conversation.push({
+            role: "user",
+            content: text
+        });
+
+        conversation.push({
+            role: "assistant",
+            content: answer
         });
 
 
-        document.body.appendChild(panel);
+        saveHistory(text);
+
+
+    } catch (error) {
+
+        console.error(
+            "SwiftCortex:",
+            error
+        );
+
+
+        if (typingBox) {
+            typingBox.remove();
+        }
+
+
+        let message =
+            error?.message ||
+            "Connection error.";
+
+
+        if (
+            error?.name ===
+            "AbortError"
+        ) {
+
+            message =
+                "⏳ The request took too long. Please try again.";
+        }
+
+
+        addMessage(
+            "❌ Connection error: " +
+            message,
+            "ai"
+        );
+
+
+    } finally {
+
+        sending = false;
+
+        if (sendBtn)
+            sendBtn.disabled = false;
     }
-);
+}
+
+
+/* =========================
+   LANGUAGE DETECTION
+========================= */
+
+function detectLanguage(text) {
+
+    if (!text) return "auto";
+
+
+    if (/[\u0980-\u09FF]/.test(text))
+        return "bn";
+
+
+    if (/[\u0600-\u06FF]/.test(text))
+        return "ar";
+
+
+    if (/[\u0900-\u097F]/.test(text))
+        return "hi";
+
+
+    if (/[\u4E00-\u9FFF]/.test(text))
+        return "zh";
+
+
+    if (/[\u3040-\u30FF]/.test(text))
+        return "ja";
+
+
+    if (/[\uAC00-\uD7AF]/.test(text))
+        return "ko";
+
+
+    return "en";
+}
+
+
+/* =========================
+   HISTORY
+========================= */
+
+function saveHistory(text) {
+
+    if (!text) return;
+
+
+    let history =
+        JSON.parse(
+            localStorage.getItem(
+                "swiftcortex_history"
+            ) || "[]"
+        );
+
+
+    history.unshift({
+        text,
+        time: Date.now()
+    });
+
+
+    history =
+        history.slice(0, 30);
+
+
+    localStorage.setItem(
+        "swiftcortex_history",
+        JSON.stringify(history)
+    );
+
+
+    renderHistory();
+}
+
+
+function renderHistory() {
+
+    const list =
+        $("historyList");
+
+    if (!list) return;
+
+
+    list.innerHTML = "";
+
+
+    const history =
+        JSON.parse(
+            localStorage.getItem(
+                "swiftcortex_history"
+            ) || "[]"
+        );
+
+
+    history.forEach(item => {
+
+        const button =
+            document.createElement("button");
+
+        button.textContent =
+            item.text.slice(0, 35);
+
+        button.style.display =
+            "block";
+
+        button.style.width =
+            "100%";
+
+        button.style.marginBottom =
+            "6px";
+
+        button.style.textAlign =
+            "left";
+
+        button.style.background =
+            "transparent";
+
+        button.style.color =
+            "inherit";
+
+        button.style.border =
+            "0";
+
+        button.style.cursor =
+            "pointer";
+
+
+        button.onclick = () => {
+
+            if (userInput) {
+
+                userInput.value =
+                    item.text;
+
+                resizeInput();
+            }
+        };
+
+
+        list.appendChild(button);
+    });
+}
+
+
+renderHistory();
 
 
 /* =========================
@@ -1637,301 +1597,30 @@ pluginBtn?.addEventListener(
 
 $("newChat")?.addEventListener(
     "click",
-    ()=>{
+    () => {
 
-        if(messages)
-            messages.innerHTML="";
+        conversation = [];
 
+        if (messages)
+            messages.innerHTML = "";
 
         addMessage(
-            "👋 Hello! I am SwiftCortex AI. How can I help you?"
+            "👋 New chat started. How can I help you?",
+            "ai"
         );
-
-
-        clearAttachments();
-
-        if(userInput){
-
-            userInput.value="";
-            userInput.focus();
-        }
     }
 );
 
 
 /* =========================
-   SETTINGS
+   DARK MODE
 ========================= */
 
-function openSettings(){
+function toggleDarkMode() {
 
-    let panel=
-        document.getElementById(
-            "settingsPanel"
-        );
+    document.body.classList.toggle("light-mode");
 
-
-    if(panel){
-
-        panel.remove();
-        return;
-    }
-
-
-    panel=
-        document.createElement("div");
-
-    panel.id="settingsPanel";
-
-
-    panel.style.position="fixed";
-    panel.style.inset="0";
-    panel.style.background=
-        "rgba(0,0,0,.75)";
-    panel.style.zIndex="20000";
-    panel.style.display="flex";
-    panel.style.alignItems="center";
-    panel.style.justifyContent="center";
-    panel.style.padding="20px";
-
-
-    panel.innerHTML=`
-
-      <div style="
-        width:min(500px,100%);
-        max-height:85vh;
-        overflow:auto;
-        background:#0f172a;
-        color:white;
-        border-radius:22px;
-        padding:22px;
-      ">
-
-        <div style="
-          display:flex;
-          justify-content:space-between;
-          align-items:center;
-        ">
-
-          <h2>⚙️ Settings</h2>
-
-          <button id="closeSettings">
-            ✕
-          </button>
-
-        </div>
-
-
-        <hr>
-
-
-        <h3>🎨 Appearance</h3>
-
-        <button id="toggleTheme">
-          🌙 Dark / ☀️ Light
-        </button>
-
-
-        <h3>🧠 AI</h3>
-
-        <label>
-          <input
-            type="checkbox"
-            id="memoryToggle"
-            checked
-          >
-          Memory
-        </label>
-
-        <br><br>
-
-        <label>
-          <input
-            type="checkbox"
-            id="historyToggle"
-            checked
-          >
-          Chat History
-        </label>
-
-        <br><br>
-
-        <label>
-          <input
-            type="checkbox"
-            id="webToggle"
-            checked
-          >
-          Web Search
-        </label>
-
-        <br><br>
-
-        <label>
-          <input
-            type="checkbox"
-            id="newsToggle"
-            checked
-          >
-          Real-time News
-        </label>
-
-
-        <h3>🔊 Voice</h3>
-
-        <label>
-          <input
-            type="checkbox"
-            id="voiceToggle"
-          >
-          Voice Features
-        </label>
-
-
-        <h3>🔔 Notifications</h3>
-
-        <label>
-          <input
-            type="checkbox"
-            id="notificationToggle"
-          >
-          Notifications
-        </label>
-
-
-        <h3>🔒 Privacy</h3>
-
-        <button id="clearMemory">
-          🧹 Clear Memory
-        </button>
-
-        <button id="clearHistory">
-          🗑️ Clear Chat History
-        </button>
-
-
-        <h3>🤖 Model</h3>
-
-        <select id="modelSelect">
-
-          <option value="qwen">
-            Qwen Vision
-          </option>
-
-          <option value="compound">
-            Groq Compound
-          </option>
-
-        </select>
-
-
-        <h3>ℹ️ About</h3>
-
-        <p>
-          SwiftCortex AI Ultra
-        </p>
-
-        <p>
-          AI assistant with text,
-          image, camera, video,
-          web and news capabilities.
-        </p>
-
-      </div>
-    `;
-
-
-    document.body.appendChild(panel);
-
-
-    $("closeSettings").onclick=
-        ()=>panel.remove();
-
-
-    $("toggleTheme").onclick=
-        toggleTheme;
-
-
-    $("clearMemory").onclick=
-        ()=>{
-
-            localStorage.removeItem(
-                "swiftcortex_memory"
-            );
-
-            alert(
-                "Memory cleared."
-            );
-        };
-
-
-    $("clearHistory").onclick=
-        ()=>{
-
-            if(messages)
-                messages.innerHTML="";
-
-            alert(
-                "Chat history cleared."
-            );
-        };
-}
-
-
-/* =========================
-   SETTINGS BUTTON
-========================= */
-
-function createSettingsButton(){
-
-    const sidebar=
-        document.querySelector(
-            ".side-bottom"
-        );
-
-    if(!sidebar)
-        return;
-
-
-    if(
-        document.getElementById(
-            "settingsBtn"
-        )
-    )
-        return;
-
-
-    const btn=
-        document.createElement("button");
-
-    btn.id="settingsBtn";
-
-    btn.textContent=
-        "⚙️ Settings";
-
-    btn.onclick=
-        openSettings;
-
-
-    sidebar.appendChild(btn);
-}
-
-
-createSettingsButton();
-
-
-/* =========================
-   THEME
-========================= */
-
-function toggleTheme(){
-
-    document.body.classList.toggle(
-        "light-mode"
-    );
-
-
-    const light=
+    const light =
         document.body.classList.contains(
             "light-mode"
         );
@@ -1945,48 +1634,461 @@ function toggleTheme(){
     );
 
 
-    const themeBtn=
-        $("themeBtn");
-
-
-    if(themeBtn){
-
-        themeBtn.textContent=
-            light
-                ? "☀️ Light Mode"
-                : "🌙 Dark Mode";
-    }
+    updateThemeButtons();
 }
 
 
-/* =========================
-   LOAD THEME
-========================= */
+function updateThemeButtons() {
 
-if(
+    const light =
+        document.body.classList.contains(
+            "light-mode"
+        );
+
+
+    const text =
+        light
+            ? "☀️ Light Mode"
+            : "🌙 Dark Mode";
+
+
+    if ($("themeBtn"))
+        $("themeBtn").textContent = text;
+
+    if ($("settingsThemeBtn"))
+        $("settingsThemeBtn").textContent =
+            light ? "Light" : "Dark";
+}
+
+
+$("themeBtn")?.addEventListener(
+    "click",
+    toggleDarkMode
+);
+
+
+$("settingsThemeBtn")?.addEventListener(
+    "click",
+    toggleDarkMode
+);
+
+
+if (
     localStorage.getItem(
         "swiftcortex_theme"
-    )==="light"
-){
+    ) === "light"
+) {
 
     document.body.classList.add(
         "light-mode"
     );
-
-    if($("themeBtn"))
-        $("themeBtn").textContent=
-            "☀️ Light Mode";
 }
 
 
+updateThemeButtons();
+
+
 /* =========================
-   EXISTING THEME BUTTON
+   SETTINGS
 ========================= */
 
-$("themeBtn")?.addEventListener(
+function openSettings() {
+
+    $("settingsModal")?.classList.add(
+        "show"
+    );
+}
+
+
+function closeSettings() {
+
+    $("settingsModal")?.classList.remove(
+        "show"
+    );
+}
+
+
+$("settingsBtn")?.addEventListener(
     "click",
-    toggleTheme
+    openSettings
 );
+
+
+$("topSettingsBtn")?.addEventListener(
+    "click",
+    openSettings
+);
+
+
+$("settingsClose")?.addEventListener(
+    "click",
+    closeSettings
+);
+
+
+/* =========================
+   MOBILE MENU
+========================= */
+
+$("menuBtn")?.addEventListener(
+    "click",
+    () => {
+
+        $("sidebar")?.classList.toggle(
+            "show"
+        );
+    }
+);
+
+
+/* =========================
+   MEMORY
+========================= */
+
+let memoryEnabled =
+    localStorage.getItem(
+        "swiftcortex_memory"
+    ) !== "off";
+
+
+function updateMemoryButton() {
+
+    const btn =
+        $("memoryToggle");
+
+    if (!btn) return;
+
+    btn.textContent =
+        memoryEnabled
+            ? "ON"
+            : "OFF";
+}
+
+
+$("memoryToggle")?.addEventListener(
+    "click",
+    () => {
+
+        memoryEnabled =
+            !memoryEnabled;
+
+        localStorage.setItem(
+            "swiftcortex_memory",
+            memoryEnabled
+                ? "on"
+                : "off"
+        );
+
+        updateMemoryButton();
+    }
+);
+
+
+updateMemoryButton();
+
+
+/* =========================
+   VOICE
+========================= */
+
+let voiceEnabled = false;
+
+
+$("voiceToggle")?.addEventListener(
+    "click",
+    () => {
+
+        voiceEnabled =
+            !voiceEnabled;
+
+        $("voiceToggle").textContent =
+            voiceEnabled
+                ? "ON"
+                : "OFF";
+    }
+);
+
+
+/* =========================
+   CLEAR HISTORY
+========================= */
+
+$("clearHistoryBtn")?.addEventListener(
+    "click",
+    () => {
+
+        localStorage.removeItem(
+            "swiftcortex_history"
+        );
+
+        renderHistory();
+    }
+);
+
+
+/* =========================
+   LOGIN
+========================= */
+
+function openLogin() {
+
+    $("loginModal")?.classList.add(
+        "show"
+    );
+}
+
+
+function closeLogin() {
+
+    $("loginModal")?.classList.remove(
+        "show"
+    );
+}
+
+
+$("loginBtn")?.addEventListener(
+    "click",
+    openLogin
+);
+
+
+$("settingsLoginBtn")?.addEventListener(
+    "click",
+    openLogin
+);
+
+
+$("loginClose")?.addEventListener(
+    "click",
+    closeLogin
+);
+
+
+$("guestBtn")?.addEventListener(
+    "click",
+    () => {
+
+        closeLogin();
+
+        addMessage(
+            "👤 Guest mode activated.",
+            "ai"
+        );
+    }
+);
+
+
+/* =========================
+   SUBSCRIPTION
+========================= */
+
+function openSubscription() {
+
+    $("subscriptionModal")?.classList.add(
+        "show"
+    );
+}
+
+
+$("subscriptionBtn")?.addEventListener(
+    "click",
+    openSubscription
+);
+
+
+$("subscriptionClose")?.addEventListener(
+    "click",
+    () => {
+
+        $("subscriptionModal")
+            ?.classList.remove("show");
+    }
+);
+
+
+$("upgradeBtn")?.addEventListener(
+    "click",
+    () => {
+
+        addMessage(
+            "⭐ Pro subscription is ready to be connected to your payment system.",
+            "ai"
+        );
+
+        $("subscriptionModal")
+            ?.classList.remove("show");
+    }
+);
+
+
+/* =========================
+   AI IMAGE
+========================= */
+
+function imageGeneration() {
+
+    closePlus();
+
+    if (userInput) {
+
+        userInput.value =
+            "Create an image of ";
+
+        userInput.focus();
+
+        resizeInput();
+    }
+}
+
+
+$("imageGenBtn")?.addEventListener(
+    "click",
+    imageGeneration
+);
+
+
+$("imageGenMenuBtn")?.addEventListener(
+    "click",
+    imageGeneration
+);
+
+
+/* =========================
+   AI VIDEO
+========================= */
+
+function videoGeneration() {
+
+    closePlus();
+
+    if (userInput) {
+
+        userInput.value =
+            "Create a video of ";
+
+        userInput.focus();
+
+        resizeInput();
+    }
+}
+
+
+$("videoGenBtn")?.addEventListener(
+    "click",
+    videoGeneration
+);
+
+
+$("videoGenMenuBtn")?.addEventListener(
+    "click",
+    videoGeneration
+);
+
+
+/* =========================
+   RECENT
+========================= */
+
+$("recentBtn")?.addEventListener(
+    "click",
+    () => {
+
+        openSettings();
+
+        renderHistory();
+    }
+);
+
+
+/* =========================
+   MEMORY SIDE BUTTON
+========================= */
+
+$("memoryBtn")?.addEventListener(
+    "click",
+    () => {
+
+        openSettings();
+
+        $("memoryToggle")?.click();
+    }
+);
+
+
+/* =========================
+   LOGIN SUBMIT
+========================= */
+
+$("signInSubmit")?.addEventListener(
+    "click",
+    () => {
+
+        const email =
+            $("emailInput")?.value.trim();
+
+        if (!email) {
+
+            addMessage(
+                "Please enter your email.",
+                "ai"
+            );
+
+            return;
+        }
+
+
+        closeLogin();
+
+        addMessage(
+            "👤 Sign-in interface is ready. Connect your authentication provider to enable real accounts.",
+            "ai"
+        );
+    }
+);
+
+
+/* =========================
+   CLOSE MODALS ON BACKDROP
+========================= */
+
+[
+    "settingsModal",
+    "loginModal",
+    "subscriptionModal",
+    "pluginsModal"
+].forEach(id => {
+
+    const modal = $(id);
+
+    modal?.addEventListener(
+        "click",
+        event => {
+
+            if (event.target === modal) {
+
+                modal.classList.remove(
+                    "show"
+                );
+            }
+        }
+    );
+});
+
+
+/* =========================
+   INITIAL WELCOME
+========================= */
+
+if (
+    messages &&
+    messages.children.length === 0
+) {
+
+    addMessage(
+        "👋 Hello! I am SwiftCortex AI. How can I help you?",
+        "ai"
+    );
+}
 
 
 /* =========================
@@ -1994,5 +2096,5 @@ $("themeBtn")?.addEventListener(
 ========================= */
 
 console.log(
-    "⚡ SwiftCortex AI Ultra loaded successfully"
+    "⚡ SwiftCortex AI Ultra loaded successfully."
 );
