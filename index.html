@@ -1,1109 +1,1170 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
-  >
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-  <title>SwiftCortex AI Ultra</title>
+    <meta name="theme-color" content="#070b14">
 
-  <link rel="stylesheet" href="style.css">
+    <title>SwiftCortex AI Ultra</title>
 
-  <meta
-    name="theme-color"
-    content="#0b0f14"
-  >
+    <link rel="stylesheet" href="style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
 </head>
+
 
 <body>
 
-  <!-- =====================================================
-       APP
-  ====================================================== -->
 
-  <div class="app">
+<div class="app">
 
 
-    <!-- ===================================================
+    <!-- =====================================================
          SIDEBAR
-    ==================================================== -->
+    ====================================================== -->
 
-    <aside id="sidebar" class="sidebar">
+    <aside
+        class="sidebar"
+        id="sidebar"
+    >
 
-      <!-- Profile -->
-      <div class="sidebar-profile">
 
-        <div class="profile-avatar">
-          A
+        <!-- PROFILE -->
+        <div class="profile-area">
+
+            <button
+                class="profile-btn"
+                id="profileBtn"
+                type="button"
+            >
+
+                <span class="avatar">
+                    A
+                </span>
+
+                <span class="profile-text">
+
+                    <strong>
+                        Abdullah Tahmid
+                    </strong>
+
+                    <small>
+                        Free Plan
+                    </small>
+
+                </span>
+
+                <span class="profile-more">
+                    ⋮
+                </span>
+
+            </button>
+
         </div>
 
-        <div class="profile-info">
-          <strong>Abdullah Tahmid</strong>
-          <span>Free Plan</span>
+
+        <!-- SIDEBAR SETTINGS TOP -->
+        <div class="settings-top">
+
+            <button
+                class="side-btn"
+                id="settingsBtn"
+                type="button"
+            >
+                ⚙️
+                <span>
+                    Settings
+                </span>
+            </button>
+
         </div>
 
-        <button
-          id="profileMenuBtn"
-          class="profile-menu-btn"
-          type="button"
-          aria-label="Profile menu"
-        >
-          ⋮
-        </button>
 
-      </div>
+        <!-- SIDEBAR OPTIONS -->
+        <div class="sidebar-bottom">
 
 
-      <!-- Sidebar Settings -->
-      <div class="sidebar-settings-top">
+            <button
+                class="side-btn"
+                id="memoryBtn"
+                type="button"
+            >
 
-        <button
-          id="settingsBtn"
-          class="sidebar-setting-button"
-          type="button"
-        >
-          ⚙️ Settings
-        </button>
+                🧠
 
-      </div>
+                <span>
+                    Memory
+                </span>
 
+                <b id="memoryStatus">
+                    ON
+                </b>
 
-      <!-- Sidebar Options -->
-      <div class="sidebar-options">
-
-        <button
-          id="memoryBtn"
-          class="sidebar-option"
-          type="button"
-        >
-          <span>🧠</span>
-          <span>Memory</span>
-          <b>ON</b>
-        </button>
+            </button>
 
 
-        <button
-          id="customerSupportBtn"
-          class="sidebar-option"
-          type="button"
-        >
-          <span>💬</span>
-          <span>Customer Support</span>
-        </button>
+            <button
+                class="side-btn"
+                id="customerSupportBtn"
+                type="button"
+            >
+
+                💬
+
+                <span>
+                    Customer Support
+                </span>
+
+            </button>
 
 
-        <button
-          id="sidebarSettingsBtn"
-          class="sidebar-option"
-          type="button"
-        >
-          <span>⚙️</span>
-          <span>Settings</span>
-        </button>
+            <button
+                class="side-btn"
+                id="sidebarSettingsBtn"
+                type="button"
+            >
+
+                ⚙️
+
+                <span>
+                    Settings
+                </span>
+
+            </button>
 
 
-        <button
-          id="themeBtn"
-          class="sidebar-option"
-          type="button"
-        >
-          <span>🌙</span>
-          <span>Dark Mode</span>
-        </button>
+            <button
+                class="side-btn"
+                id="themeBtn"
+                type="button"
+            >
 
-      </div>
+                🌙
+
+                <span>
+                    Dark Mode
+                </span>
+
+            </button>
 
 
-      <!-- Brand -->
-      <div class="sidebar-brand">
-
-        <div class="brand-title">
-          ⚡ SwiftCortex
         </div>
 
-        <div class="brand-subtitle">
-          AI Ultra
+
+        <!-- BRAND -->
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                ⚡
+            </div>
+
+            <div>
+
+                <strong>
+                    SwiftCortex
+                </strong>
+
+                <small>
+                    AI Ultra
+                </small>
+
+            </div>
+
         </div>
 
-      </div>
 
+        <!-- NEW CHAT -->
 
-      <!-- New Chat -->
-      <button
-        id="newChat"
-        class="new-chat-btn"
-        type="button"
-      >
-        ＋ New Chat
-      </button>
-
-
-      <!-- Recent -->
-      <div class="recent-title">
-        RECENT
-      </div>
-
-      <div
-        id="historyList"
-        class="history-list"
-      >
-
-        <button class="history-item" type="button">
-          Hi
+        <button
+            class="new-chat"
+            id="newChat"
+            type="button"
+        >
+            ＋ New Chat
         </button>
 
-        <button class="history-item" type="button">
-          How Are You
-        </button>
 
-        <button class="history-item" type="button">
-          What's Your Name
-        </button>
+        <!-- RECENT -->
 
-        <button class="history-item" type="button">
-          Who Created You
-        </button>
+        <div class="sidebar-section">
 
-      </div>
+            <div class="section-title">
+                RECENT
+            </div>
+
+            <div id="historyList"></div>
+
+        </div>
+
 
     </aside>
 
 
 
-    <!-- ===================================================
+    <!-- =====================================================
          MAIN
-    ==================================================== -->
+    ====================================================== -->
 
     <main class="main">
 
 
-      <!-- Header -->
-      <header class="topbar">
+        <!-- TOP BAR -->
 
-        <button
-          id="menuBtn"
-          class="menu-btn"
-          type="button"
-          aria-label="Open menu"
-        >
-          ☰
-        </button>
-
-        <div class="topbar-title">
-          <strong>⚡ SwiftCortex AI</strong>
-          <span>Ultra</span>
-        </div>
-
-        <button
-          id="topProfileBtn"
-          class="top-profile-btn"
-          type="button"
-          aria-label="Profile"
-        >
-          A
-        </button>
-
-      </header>
+        <header class="topbar">
 
 
+            <button
+                id="menuBtn"
+                class="icon-btn"
+                type="button"
+                aria-label="Menu"
+            >
+                ☰
+            </button>
 
-      <!-- =================================================
-           CHAT AREA
-      ================================================== -->
 
-      <section
-        id="chatArea"
-        class="chatArea"
-      >
+            <div class="top-title">
 
-        <div
-          id="messages"
-          class="messages"
-        >
+                <strong>
+                    SwiftCortex AI
+                </strong>
 
-          <!-- AI Welcome -->
-          <div class="welcome-message">
+                <span>
+                    Ultra
+                </span>
 
-            <div class="welcome-logo">
-              ⚡
             </div>
 
-            <h1>
-              Welcome to SwiftCortex AI
-            </h1>
 
-            <p>
-              Your intelligent AI assistant for
-              questions, ideas, files and more.
-            </p>
+            <button
+                id="newTopChat"
+                class="top-new"
+                type="button"
+            >
+                ＋ New
+            </button>
 
-          </div>
 
-        </div>
-
-      </section>
+        </header>
 
 
 
-      <!-- =================================================
-           ATTACHMENT PREVIEW
-      ================================================== -->
+        <!-- =================================================
+             CHAT
+        ================================================== -->
 
-      <div
-        id="imagePreview"
-        class="image-preview"
-      ></div>
-
-
-
-      <!-- =================================================
-           INPUT AREA
-      ================================================== -->
-
-      <div class="input-wrapper">
-
-        <!-- Plus Menu -->
-
-        <div
-          id="plusMenu"
-          class="plus-menu"
+        <section
+            class="chat"
+            id="messages"
         >
 
-          <button
-            id="cameraBtn"
-            type="button"
-          >
-            📷
-            <span>Camera</span>
-          </button>
 
-          <button
-            id="photoBtn"
-            type="button"
-          >
-            🖼
-            <span>Photos</span>
-          </button>
-
-          <button
-            id="fileBtn"
-            type="button"
-          >
-            📄
-            <span>Files</span>
-          </button>
-
-          <button
-            id="pluginBtn"
-            type="button"
-          >
-            🧩
-            <span>Plugins</span>
-          </button>
-
-          <button
-            id="thinkBtn"
-            type="button"
-          >
-            🧠
-            <span>Think Harder</span>
-          </button>
-
-        </div>
+            <div class="welcome">
 
 
-
-        <!-- Input -->
-
-        <div class="input-area">
-
-          <button
-            id="plusBtn"
-            class="plus-btn"
-            type="button"
-            aria-label="More options"
-          >
-            ＋
-          </button>
+                <div class="welcome-logo">
+                    ⚡
+                </div>
 
 
-          <textarea
-            id="userInput"
-            rows="1"
-            placeholder="Message SwiftCortex AI..."
-            autocomplete="off"
-          ></textarea>
+                <h1>
+                    Welcome to SwiftCortex AI
+                </h1>
 
 
-          <button
-            id="sendBtn"
-            class="send-btn"
-            type="button"
-            aria-label="Send"
-          >
-            ➤
-          </button>
+                <p>
+                    Your intelligent AI assistant for
+                    chat, images, files, ideas and more.
+                </p>
 
-        </div>
 
-      </div>
+                <div class="quick-actions">
+
+
+                    <button
+                        type="button"
+                        data-prompt="Tell me today's latest news"
+                    >
+                        📰 Latest News
+                    </button>
+
+
+                    <button
+                        type="button"
+                        data-prompt="Help me write something"
+                    >
+                        ✍️ Write
+                    </button>
+
+
+                    <button
+                        type="button"
+                        data-prompt="Explain something to me"
+                    >
+                        💡 Explain
+                    </button>
+
+
+                    <button
+                        type="button"
+                        data-prompt="Help me with coding"
+                    >
+                        💻 Coding
+                    </button>
+
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- ATTACHMENT PREVIEW -->
+
+        <div
+            id="imagePreview"
+            class="attachment-preview"
+        ></div>
+
+
+
+        <!-- =================================================
+             COMPOSER
+        ================================================== -->
+
+        <footer class="composer">
+
+
+            <div class="composer-box">
+
+
+                <!-- PLUS -->
+
+                <div class="plus-wrap">
+
+
+                    <button
+                        id="plusBtn"
+                        class="composer-btn"
+                        type="button"
+                        aria-label="More options"
+                    >
+                        ＋
+                    </button>
+
+
+                    <!-- PLUS MENU -->
+
+                    <div
+                        id="plusMenu"
+                        class="plus-menu"
+                    >
+
+
+                        <button
+                            id="cameraBtn"
+                            type="button"
+                        >
+
+                            <span>
+                                📷
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    Camera
+                                </strong>
+
+                                <small>
+                                    Take a photo or video
+                                </small>
+
+                            </div>
+
+                        </button>
+
+
+
+                        <button
+                            id="photoBtn"
+                            type="button"
+                        >
+
+                            <span>
+                                🖼️
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    Photos
+                                </strong>
+
+                                <small>
+                                    Upload an image
+                                </small>
+
+                            </div>
+
+                        </button>
+
+
+
+                        <button
+                            id="fileBtn"
+                            type="button"
+                        >
+
+                            <span>
+                                📄
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    Files
+                                </strong>
+
+                                <small>
+                                    Upload a file
+                                </small>
+
+                            </div>
+
+                        </button>
+
+
+
+                        <button
+                            id="pluginBtn"
+                            type="button"
+                        >
+
+                            <span>
+                                🧩
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    Plugins
+                                </strong>
+
+                                <small>
+                                    Explore tools
+                                </small>
+
+                            </div>
+
+                        </button>
+
+
+
+                        <button
+                            id="thinkBtn"
+                            type="button"
+                        >
+
+                            <span>
+                                🧠
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    Think Harder
+                                </strong>
+
+                                <small>
+                                    Use deeper reasoning
+                                </small>
+
+                            </div>
+
+                        </button>
+
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- IMAGE INPUT -->
+
+                <input
+                    type="file"
+                    id="imageInput"
+                    accept="image/*"
+                    hidden
+                >
+
+
+                <!-- FILE INPUT -->
+
+                <input
+                    type="file"
+                    id="fileInput"
+                    hidden
+                >
+
+
+
+                <!-- TEXT -->
+
+                <textarea
+                    id="userInput"
+                    rows="1"
+                    placeholder="Message SwiftCortex AI..."
+                ></textarea>
+
+
+
+                <!-- MICROPHONE -->
+
+                <button
+                    id="micBtn"
+                    class="mic-btn"
+                    type="button"
+                    aria-label="Voice input"
+                >
+                    🎙️
+                </button>
+
+
+
+                <!-- SEND -->
+
+                <button
+                    id="sendBtn"
+                    class="send-btn"
+                    type="button"
+                    aria-label="Send message"
+                >
+                    ➤
+                </button>
+
+
+            </div>
+
+
+            <div class="composer-note">
+
+                SwiftCortex AI can make mistakes.
+                Check important information.
+
+            </div>
+
+
+        </footer>
+
 
     </main>
 
-  </div>
+
+</div>
 
 
 
-  <!-- =====================================================
-       HIDDEN FILE INPUTS
-  ====================================================== -->
+<!-- =========================================================
+     CAMERA MODAL
+========================================================== -->
 
-  <input
-    id="imageInput"
-    type="file"
-    accept="image/*"
-    hidden
-  >
-
-  <input
-    id="fileInput"
-    type="file"
-    hidden
-  >
-
-
-
-  <!-- =====================================================
-       CAMERA MODAL
-  ====================================================== -->
-
-  <div
+<div
     id="cameraModal"
-    class="camera-modal"
-  >
-
-    <div class="camera-box">
+    class="modal"
+>
 
 
-      <!-- Camera Header -->
-
-      <div class="camera-header">
-
-        <button
-          id="cameraClose"
-          type="button"
-        >
-          ✕
-        </button>
-
-        <h2>
-          Camera
-        </h2>
-
-        <span></span>
-
-      </div>
+    <div class="modal-box camera-box">
 
 
-      <!-- Camera Screen -->
-
-      <div class="camera-screen">
-
-        <video
-          id="cameraVideo"
-          autoplay
-          playsinline
-          muted
-        ></video>
+        <div class="modal-header">
 
 
-        <div
-          id="cameraError"
-          class="camera-error"
-          hidden
-        >
+            <div>
 
-          <strong>
-            Camera unavailable
-          </strong>
+                <strong>
+                    📷 Camera
+                </strong>
 
-          <span id="cameraErrorText">
-            Please allow camera permission.
-          </span>
+                <small>
+                    SwiftCortex AI
+                </small>
+
+            </div>
+
+
+            <button
+                id="cameraClose"
+                class="close-btn"
+                type="button"
+            >
+                ✕
+            </button>
+
 
         </div>
 
-      </div>
 
 
-      <!-- Camera Mode -->
+        <!-- CAMERA MODE -->
 
-      <div class="camera-mode">
+        <div class="camera-mode">
+
+
+            <button
+                id="photoMode"
+                class="mode-btn active"
+                type="button"
+            >
+                📸 Photo
+            </button>
+
+
+            <button
+                id="videoMode"
+                class="mode-btn"
+                type="button"
+            >
+                🎥 Video
+            </button>
+
+
+        </div>
+
+
+
+        <!-- CAMERA SCREEN -->
+
+        <div class="camera-screen">
+
+
+            <video
+                id="cameraVideo"
+                autoplay
+                playsinline
+                muted
+            ></video>
+
+
+            <div
+                id="recordTime"
+                class="record-time"
+            >
+                🔴 00:00
+            </div>
+
+
+            <div
+                id="cameraError"
+                class="camera-error"
+            >
+
+                <strong>
+                    Camera unavailable
+                </strong>
+
+                <span id="cameraErrorText">
+                    Please allow camera access.
+                </span>
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- CAMERA CONTROLS -->
+
+        <div class="camera-controls">
+
+
+            <button
+                id="switchCamera"
+                class="round-control"
+                type="button"
+            >
+                🔄
+            </button>
+
+
+            <button
+                id="takePhoto"
+                class="camera-main"
+                type="button"
+            >
+                📸 Take Photo
+            </button>
+
+
+            <button
+                id="startRecord"
+                class="record-btn"
+                type="button"
+                style="display:none"
+            >
+                ⏺ Record
+            </button>
+
+
+            <button
+                id="stopRecord"
+                class="stop-btn"
+                type="button"
+                style="display:none"
+            >
+                ⏹ Stop
+            </button>
+
+
+        </div>
+
+
+
+        <div id="mediaResult"></div>
+
+
+    </div>
+
+
+</div>
+
+
+
+<!-- =========================================================
+     SETTINGS MODAL
+========================================================== -->
+
+<div
+    id="settingsModal"
+    class="modal"
+>
+
+
+    <div class="modal-box settings-box">
+
+
+        <div class="modal-header">
+
+
+            <div>
+
+                <strong>
+                    ⚙️ Settings
+                </strong>
+
+                <small>
+                    SwiftCortex AI preferences
+                </small>
+
+            </div>
+
+
+            <button
+                id="settingsClose"
+                class="close-btn"
+                type="button"
+            >
+                ✕
+            </button>
+
+
+        </div>
+
+
+
+        <div class="settings-list">
+
+
+            <button
+                class="setting-item"
+                type="button"
+            >
+
+                <span>
+                    👤 Account
+                </span>
+
+                <small>
+                    Abdullah Tahmid
+                </small>
+
+            </button>
+
+
+
+            <button
+                class="setting-item"
+                type="button"
+            >
+
+                <span>
+                    🧠 Memory
+                </span>
+
+                <small id="settingsMemory">
+                    On
+                </small>
+
+            </button>
+
+
+
+            <button
+                class="setting-item"
+                type="button"
+            >
+
+                <span>
+                    🎨 Appearance
+                </span>
+
+                <small>
+                    Dark
+                </small>
+
+            </button>
+
+
+
+            <button
+                class="setting-item"
+                type="button"
+            >
+
+                <span>
+                    🌐 Language
+                </span>
+
+                <small>
+                    Auto
+                </small>
+
+            </button>
+
+
+
+            <button
+                class="setting-item"
+                type="button"
+            >
+
+                <span>
+                    🔔 Notifications
+                </span>
+
+                <small>
+                    Manage notifications
+                </small>
+
+            </button>
+
+
+
+            <button
+                class="setting-item"
+                type="button"
+            >
+
+                <span>
+                    💎 Subscription
+                </span>
+
+                <small>
+                    Free Plan
+                </small>
+
+            </button>
+
+
+
+            <button
+                class="setting-item"
+                type="button"
+            >
+
+                <span>
+                    🔒 Privacy
+                </span>
+
+                <small>
+                    Privacy controls
+                </small>
+
+            </button>
+
+
+
+            <button
+                class="setting-item"
+                type="button"
+            >
+
+                <span>
+                    🗑️ Clear History
+                </span>
+
+                <small>
+                    Remove recent chats
+                </small>
+
+            </button>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+
+<!-- =========================================================
+     PLUGINS MODAL
+========================================================== -->
+
+<div
+    id="pluginModal"
+    class="modal"
+>
+
+
+    <div class="modal-box plugin-box">
+
+
+        <div class="modal-header">
+
+
+            <div>
+
+                <strong>
+                    🧩 Plugins
+                </strong>
+
+                <small>
+                    SwiftCortex tools
+                </small>
+
+            </div>
+
+
+            <button
+                id="pluginClose"
+                class="close-btn"
+                type="button"
+            >
+                ✕
+            </button>
+
+
+        </div>
+
+
+
+        <div class="plugin-grid">
+
+
+            <button
+                class="plugin-card"
+                type="button"
+            >
+                🔎
+                <strong>
+                    Web Search
+                </strong>
+                <small>
+                    Search the web
+                </small>
+            </button>
+
+
+            <button
+                class="plugin-card"
+                type="button"
+            >
+                🖼️
+                <strong>
+                    AI Image
+                </strong>
+                <small>
+                    Generate images
+                </small>
+            </button>
+
+
+            <button
+                class="plugin-card"
+                type="button"
+            >
+                🎬
+                <strong>
+                    AI Video
+                </strong>
+                <small>
+                    Generate videos
+                </small>
+            </button>
+
+
+            <button
+                class="plugin-card"
+                type="button"
+            >
+                💻
+                <strong>
+                    Code
+                </strong>
+                <small>
+                    Developer tools
+                </small>
+            </button>
+
+
+            <button
+                class="plugin-card"
+                type="button"
+            >
+                📊
+                <strong>
+                    Data
+                </strong>
+                <small>
+                    Analyze data
+                </small>
+            </button>
+
+
+            <button
+                class="plugin-card"
+                type="button"
+            >
+                🌐
+                <strong>
+                    Translator
+                </strong>
+                <small>
+                    Translate languages
+                </small>
+            </button>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+
+<!-- =========================================================
+     PROFILE MODAL
+========================================================== -->
+
+<div
+    id="profileModal"
+    class="modal"
+>
+
+
+    <div class="modal-box profile-box">
+
+
+        <div class="modal-header">
+
+
+            <div>
+
+                <strong>
+                    👤 Abdullah Tahmid
+                </strong>
+
+                <small>
+                    Free Plan
+                </small>
+
+            </div>
+
+
+            <button
+                id="profileClose"
+                class="close-btn"
+                type="button"
+            >
+                ✕
+            </button>
+
+
+        </div>
+
+
 
         <button
-          id="photoMode"
-          class="mode-btn active"
-          type="button"
+            class="account-btn"
+            type="button"
         >
-          Photo
-        </button>
-
-        <button
-          id="videoMode"
-          class="mode-btn"
-          type="button"
-        >
-          Video
-        </button>
-
-      </div>
-
-
-      <!-- Camera Controls -->
-
-      <div class="camera-controls">
-
-        <button
-          id="switchCamera"
-          class="camera-action"
-          type="button"
-        >
-          🔄
+            🔐 Sign In
         </button>
 
 
         <button
-          id="takePhoto"
-          class="camera-action main-camera-btn"
-          type="button"
+            class="account-btn"
+            type="button"
         >
-          ●
+            📝 Create Account
         </button>
 
 
         <button
-          id="startRecord"
-          class="camera-action"
-          type="button"
+            class="account-btn premium"
+            type="button"
         >
-          ●
+            💎 View Subscription
         </button>
 
 
-        <button
-          id="stopRecord"
-          class="camera-action"
-          type="button"
-          hidden
-        >
-          ■
-        </button>
-
-      </div>
-
-
-      <!-- Recording Time -->
-
-      <div
-        id="recordTime"
-        class="record-time"
-      >
-        00:00
-      </div>
-
-
-      <!-- Result -->
-
-      <div
-        id="mediaResult"
-        class="media-result"
-      ></div>
-
-    </div>
-
-  </div>
-
-
-
-  <!-- =====================================================
-       SETTINGS PAGE
-  ====================================================== -->
-
-  <div
-    id="settingsPage"
-    class="settings-page"
-  >
-
-
-    <!-- Settings Header -->
-
-    <div class="settings-header">
-
-      <button
-        id="settingsBackBtn"
-        class="settings-back-btn"
-        type="button"
-      >
-        ←
-      </button>
-
-      <h1>
-        Settings
-      </h1>
-
     </div>
 
 
+</div>
 
-    <!-- Profile -->
 
-    <div class="settings-profile">
 
-      <div class="settings-avatar">
-        A
-      </div>
+<!-- =========================================================
+     JAVASCRIPT
+========================================================== -->
 
-      <div class="settings-profile-info">
+<script src="script.js"></script>
 
-        <h2>
-          Abdullah Tahmid
-        </h2>
-
-        <p>
-          Free Plan
-        </p>
-
-      </div>
-
-      <button
-        id="profileEditBtn"
-        class="profile-edit-btn"
-        type="button"
-      >
-        ✎
-      </button>
-
-    </div>
-
-
-
-    <!-- =================================================
-         MY SWIFTCORTEX
-    ================================================== -->
-
-    <div class="settings-section-title">
-      My SwiftCortex
-    </div>
-
-
-    <div class="settings-group">
-
-
-      <button
-        id="personalizationBtn"
-        class="settings-item"
-        type="button"
-      >
-
-        <span class="settings-icon">
-          ☺
-        </span>
-
-        <span class="settings-item-content">
-
-          <strong>
-            Personalization
-          </strong>
-
-          <small>
-            Customize your AI experience
-          </small>
-
-        </span>
-
-        <span class="settings-arrow">
-          ›
-        </span>
-
-      </button>
-
-
-
-      <button
-        id="memorySettingsBtn"
-        class="settings-item"
-        type="button"
-      >
-
-        <span class="settings-icon">
-          🧠
-        </span>
-
-        <span class="settings-item-content">
-
-          <strong>
-            Memory
-          </strong>
-
-          <small>
-            Manage what SwiftCortex remembers
-          </small>
-
-        </span>
-
-        <span class="settings-status">
-          ON
-        </span>
-
-      </button>
-
-
-
-      <button
-        id="pluginsSettingsBtn"
-        class="settings-item"
-        type="button"
-      >
-
-        <span class="settings-icon">
-          ✣
-        </span>
-
-        <span class="settings-item-content">
-
-          <strong>
-            Plugins
-          </strong>
-
-          <small>
-            Manage connected plugins
-          </small>
-
-        </span>
-
-        <span class="settings-arrow">
-          ›
-        </span>
-
-      </button>
-
-
-    </div>
-
-
-
-    <!-- =================================================
-         APPEARANCE
-    ================================================== -->
-
-    <div class="settings-section-title">
-      Appearance
-    </div>
-
-
-    <div class="settings-group">
-
-
-      <button
-        id="appearanceBtn"
-        class="settings-item"
-        type="button"
-      >
-
-        <span class="settings-icon">
-          ☀
-        </span>
-
-        <span class="settings-item-content">
-
-          <strong>
-            Appearance
-          </strong>
-
-          <small id="appearanceValue">
-            System (Default)
-          </small>
-
-        </span>
-
-        <span class="settings-arrow">
-          ›
-        </span>
-
-      </button>
-
-
-
-      <button
-        id="accentBtn"
-        class="settings-item"
-        type="button"
-      >
-
-        <span class="settings-icon">
-          🎨
-        </span>
-
-        <span class="settings-item-content">
-
-          <strong>
-            Accent color
-          </strong>
-
-          <small>
-
-            <span class="accent-dot"></span>
-
-            <span id="accentValue">
-              Blue
-            </span>
-
-          </small>
-
-        </span>
-
-        <span class="settings-arrow">
-          ›
-        </span>
-
-      </button>
-
-
-    </div>
-
-
-
-    <!-- =================================================
-         ACCOUNT
-    ================================================== -->
-
-    <div class="settings-section-title">
-      Account
-    </div>
-
-
-    <div class="settings-group">
-
-
-      <button
-        class="settings-item"
-        type="button"
-      >
-
-        <span class="settings-icon">
-          ▣
-        </span>
-
-        <span class="settings-item-content">
-
-          <strong>
-            Workspace
-          </strong>
-
-          <small>
-            Personal
-          </small>
-
-        </span>
-
-        <span class="settings-arrow">
-          ›
-        </span>
-
-      </button>
-
-
-
-      <button
-        class="settings-item upgrade-item"
-        type="button"
-      >
-
-        <span class="settings-icon">
-          ✦
-        </span>
-
-        <span class="settings-item-content">
-
-          <strong>
-            Upgrade plan
-          </strong>
-
-          <small>
-            Get more features with Premium
-          </small>
-
-        </span>
-
-        <span class="settings-arrow">
-          ›
-        </span>
-
-      </button>
-
-
-
-      <button
-        class="settings-item"
-        type="button"
-      >
-
-        <span class="settings-icon">
-          ✉
-        </span>
-
-        <span class="settings-item-content">
-
-          <strong>
-            Email
-          </strong>
-
-          <small>
-            swiftcortexaisupport@gmail.com
-          </small>
-
-        </span>
-
-      </button>
-
-
-    </div>
-
-
-
-    <!-- =================================================
-         SUPPORT
-    ================================================== -->
-
-    <div class="settings-section-title">
-      Support
-    </div>
-
-
-    <div class="settings-group">
-
-
-      <button
-        id="customerSupportSettingsBtn"
-        class="settings-item"
-        type="button"
-      >
-
-        <span class="settings-icon">
-          💬
-        </span>
-
-        <span class="settings-item-content">
-
-          <strong>
-            Customer Support
-          </strong>
-
-          <small>
-            Get help from SwiftCortex Support
-          </small>
-
-        </span>
-
-        <span class="settings-arrow">
-          ›
-        </span>
-
-      </button>
-
-
-
-      <button
-        class="settings-item"
-        type="button"
-      >
-
-        <span class="settings-icon">
-          ⓘ
-        </span>
-
-        <span class="settings-item-content">
-
-          <strong>
-            About
-          </strong>
-
-          <small>
-            SwiftCortex AI Ultra
-          </small>
-
-        </span>
-
-        <span class="settings-arrow">
-          ›
-        </span>
-
-      </button>
-
-
-    </div>
-
-
-
-    <!-- Logout -->
-
-    <button
-      id="logoutBtn"
-      class="settings-logout"
-      type="button"
-    >
-
-      <span>
-        ⇥
-      </span>
-
-      Log out
-
-    </button>
-
-
-  </div>
-
-
-
-  <!-- =====================================================
-       APPEARANCE MODAL
-  ====================================================== -->
-
-  <div
-    id="appearanceModal"
-    class="settings-modal"
-  >
-
-    <div class="settings-modal-box">
-
-
-      <div class="settings-modal-header">
-
-        <button
-          id="appearanceClose"
-          class="modal-close"
-          type="button"
-        >
-          ←
-        </button>
-
-        <h2>
-          Appearance
-        </h2>
-
-      </div>
-
-
-
-      <button
-        class="appearance-option"
-        data-theme="system"
-        type="button"
-      >
-
-        <span>
-          ◉
-        </span>
-
-        <span>
-
-          <strong>
-            System
-          </strong>
-
-          <small>
-            Use device settings
-          </small>
-
-        </span>
-
-        <span
-          class="check"
-          id="checkSystem"
-        >
-          ✓
-        </span>
-
-      </button>
-
-
-
-      <button
-        class="appearance-option"
-        data-theme="light"
-        type="button"
-      >
-
-        <span>
-          ☀
-        </span>
-
-        <span>
-
-          <strong>
-            Light
-          </strong>
-
-          <small>
-            Use light appearance
-          </small>
-
-        </span>
-
-        <span
-          class="check"
-          id="checkLight"
-        ></span>
-
-      </button>
-
-
-
-      <button
-        class="appearance-option"
-        data-theme="dark"
-        type="button"
-      >
-
-        <span>
-          ☾
-        </span>
-
-        <span>
-
-          <strong>
-            Dark
-          </strong>
-
-          <small>
-            Use dark appearance
-          </small>
-
-        </span>
-
-        <span
-          class="check"
-          id="checkDark"
-        ></span>
-
-      </button>
-
-
-    </div>
-
-  </div>
-
-
-
-  <!-- =====================================================
-       JAVASCRIPT
-  ====================================================== -->
-
-  <script src="script.js"></script>
 
 </body>
-            </html>
+</html>
