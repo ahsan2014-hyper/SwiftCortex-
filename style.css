@@ -2030,3 +2030,43 @@ body.light-mode .settings-modal-box {
     font-size: 12px;
   }
    }
+/* =========================================================
+   Recent Chat / Memory Text Visibility Fix
+   ========================================================= */
+
+.history-item,
+.history-item span,
+.history-item p,
+.recent-chat,
+.recent-chat span,
+.recent-chat p,
+.memory-item,
+.memory-item span,
+.memory-item p {
+    color: #111111 !important;
+    opacity: 1 !important;
+}
+
+/* Memory information */
+.memory-content,
+.memory-text,
+.memory-info {
+    color: #111111 !important;
+    opacity: 1 !important;
+}
+
+/* Light Mode */
+body:not(.dark-mode) .history-item,
+body:not(.dark-mode) .history-item *,
+body:not(.dark-mode) .memory-item,
+body:not(.dark-mode) .memory-item * {
+    color: #111111 !important;
+}
+
+/* Keep dark mode readable */
+body.dark-mode .history-item,
+body.dark-mode .history-item *,
+body.dark-mode .memory-item,
+body.dark-mode .memory-item * {
+    color: #ffffff !important;
+}
