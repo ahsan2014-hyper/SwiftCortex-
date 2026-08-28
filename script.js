@@ -2807,3 +2807,362 @@ function getSpeechLanguage() {
     );
 
        }
+/* =====================================================
+   SWIFTCORTEX SETTINGS CONTROLLER
+===================================================== */
+
+const settingsPage = document.getElementById("settingsPage");
+const settingsBackBtn = document.getElementById("settingsBackBtn");
+
+const appearanceBtn = document.getElementById("appearanceBtn");
+const appearanceModal = document.getElementById("appearanceModal");
+const appearanceClose = document.getElementById("appearanceClose");
+
+const appearanceValue =
+  document.getElementById("appearanceValue");
+
+const appearanceOptions =
+  document.querySelectorAll(".appearance-option");
+
+
+/* =====================================================
+   OPEN SETTINGS
+===================================================== */
+
+function openSettings() {
+
+  if (!settingsPage) return;
+
+  settingsPage.classList.add("active");
+
+  document.body.classList.add("settings-open");
+
+  window.scrollTo(0, 0);
+}
+
+
+/* =====================================================
+   CLOSE SETTINGS
+===================================================== */
+
+function closeSettings() {
+
+  if (!settingsPage) return;
+
+  settingsPage.classList.remove("active");
+
+  document.body.classList.remove("settings-open");
+}
+
+
+/* =====================================================
+   SETTINGS BUTTON
+===================================================== */
+
+/*
+   তোমার Sidebar-এর Settings button যদি থাকে,
+   তার ID settingsBtn হতে হবে।
+*/
+
+const settingsBtn =
+  document.getElementById("settingsBtn");
+
+if (settingsBtn) {
+
+  settingsBtn.addEventListener("click", () => {
+
+    closePlusMenu?.();
+
+    openSettings();
+
+  });
+
+}
+
+
+/* =====================================================
+   BACK
+===================================================== */
+
+if (settingsBackBtn) {
+
+  settingsBackBtn.addEventListener(
+    "click",
+    closeSettings
+  );
+
+}
+
+
+/* =====================================================
+   APPEARANCE
+===================================================== */
+
+if (appearanceBtn) {
+
+  appearanceBtn.addEventListener(
+    "click",
+    () => {
+
+      appearanceModal.classList.add("active");
+
+    }
+  );
+
+}
+
+
+if (appearanceClose) {
+
+  appearanceClose.addEventListener(
+    "click",
+    () => {
+
+      appearanceModal.classList.remove("active");
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   THEME
+===================================================== */
+
+function setSwiftCortexTheme(theme) {
+
+  const body = document.body;
+
+  body.classList.remove("light-mode");
+
+  if (theme === "light") {
+
+    body.classList.add("light-mode");
+
+    appearanceValue.textContent = "Light";
+
+  }
+
+  else if (theme === "dark") {
+
+    appearanceValue.textContent = "Dark";
+
+  }
+
+  else {
+
+    appearanceValue.textContent =
+      "System (Default)";
+
+    if (
+      window.matchMedia &&
+      window.matchMedia(
+        "(prefers-color-scheme: light)"
+      ).matches
+    ) {
+
+      body.classList.add("light-mode");
+
+    }
+
+  }
+
+  localStorage.setItem(
+    "swiftcortex-theme",
+    theme
+  );
+
+  updateThemeChecks(theme);
+}
+
+
+/* =====================================================
+   CHECK MARK
+===================================================== */
+
+function updateThemeChecks(theme) {
+
+  const system =
+    document.getElementById("checkSystem");
+
+  const light =
+    document.getElementById("checkLight");
+
+  const dark =
+    document.getElementById("checkDark");
+
+  if (!system || !light || !dark) return;
+
+  system.textContent = "";
+  light.textContent = "";
+  dark.textContent = "";
+
+  if (theme === "system") {
+
+    system.textContent = "✓";
+
+  }
+
+  if (theme === "light") {
+
+    light.textContent = "✓";
+
+  }
+
+  if (theme === "dark") {
+
+    dark.textContent = "✓";
+
+  }
+
+}
+
+
+/* =====================================================
+   APPEARANCE OPTIONS
+===================================================== */
+
+appearanceOptions.forEach(option => {
+
+  option.addEventListener(
+    "click",
+    () => {
+
+      const theme =
+        option.dataset.theme;
+
+      setSwiftCortexTheme(theme);
+
+      appearanceModal.classList.remove(
+        "active"
+      );
+
+    }
+  );
+
+});
+
+
+/* =====================================================
+   LOAD SAVED THEME
+===================================================== */
+
+(function loadSwiftCortexTheme() {
+
+  const savedTheme =
+    localStorage.getItem(
+      "swiftcortex-theme"
+    ) || "system";
+
+  setSwiftCortexTheme(savedTheme);
+
+})();
+
+
+/* =====================================================
+   SYSTEM THEME CHANGE
+===================================================== */
+
+if (window.matchMedia) {
+
+  const mediaQuery =
+    window.matchMedia(
+      "(prefers-color-scheme: light)"
+    );
+
+  mediaQuery.addEventListener(
+    "change",
+    () => {
+
+      const saved =
+        localStorage.getItem(
+          "swiftcortex-theme"
+        );
+
+      if (saved === "system") {
+
+        setSwiftCortexTheme("system");
+
+      }
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   CUSTOMER SUPPORT
+===================================================== */
+
+const customerSupportSettingsBtn =
+  document.getElementById(
+    "customerSupportSettingsBtn"
+  );
+
+if (customerSupportSettingsBtn) {
+
+  customerSupportSettingsBtn.addEventListener(
+    "click",
+    () => {
+
+      /*
+        এখানে তোমার Customer Support
+        page/function open হবে।
+      */
+
+      if (typeof openCustomerSupport === "function") {
+
+        openCustomerSupport();
+
+      }
+
+      else {
+
+        window.location.href =
+          "mailto:swiftcortexaisupport@gmail.com";
+
+      }
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   LOGOUT
+===================================================== */
+
+const logoutBtn =
+  document.getElementById("logoutBtn");
+
+if (logoutBtn) {
+
+  logoutBtn.addEventListener(
+    "click",
+    () => {
+
+      const confirmed =
+        confirm(
+          "Are you sure you want to log out?"
+        );
+
+      if (!confirmed) return;
+
+      localStorage.removeItem(
+        "swiftcortex-theme"
+      );
+
+      /*
+        এখানে তোমার authentication
+        logout code পরে বসানো যাবে।
+      */
+
+      alert("You have been logged out.");
+
+    }
+  );
+
+      }
