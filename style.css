@@ -2070,3 +2070,291 @@ body.dark-mode .memory-item,
 body.dark-mode .memory-item * {
     color: #ffffff !important;
 }
+/* =========================================================
+   SwiftCortex AI Ultra
+   FINAL UI FIX
+   Plugins + Think Harder + Dark Mode + Memory
+   ========================================================= */
+
+/* ---------- Smooth Theme ---------- */
+
+html,
+body,
+body * {
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        border-color 0.25s ease;
+}
+
+
+/* =========================================================
+   LIGHT MODE
+   ========================================================= */
+
+body:not(.dark-mode),
+html:not(.dark-mode) body {
+    background: #ffffff !important;
+    color: #111111 !important;
+}
+
+body:not(.dark-mode) .history-item,
+body:not(.dark-mode) .history-item *,
+body:not(.dark-mode) .memory-item,
+body:not(.dark-mode) .memory-item *,
+body:not(.dark-mode) .memory-content,
+body:not(.dark-mode) .memory-content *,
+body:not(.dark-mode) .memory-text,
+body:not(.dark-mode) .memory-info {
+    color: #111111 !important;
+}
+
+
+/* =========================================================
+   DARK MODE — WHOLE APP
+   ========================================================= */
+
+html.dark-mode,
+body.dark-mode {
+    background: #0b0b0f !important;
+    color: #f5f5f5 !important;
+}
+
+body.dark-mode .sidebar {
+    background: #111116 !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .main,
+body.dark-mode .main-content,
+body.dark-mode .chat-container,
+body.dark-mode .chatArea {
+    background: #0b0b0f !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .history-item,
+body.dark-mode .memory-item {
+    background: #18181f !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .history-item *,
+body.dark-mode .memory-item *,
+body.dark-mode .memory-content *,
+body.dark-mode .memory-text,
+body.dark-mode .memory-info {
+    color: #ffffff !important;
+}
+
+body.dark-mode textarea,
+body.dark-mode input {
+    background: #18181f !important;
+    color: #ffffff !important;
+    border-color: #30303a !important;
+}
+
+body.dark-mode textarea::placeholder,
+body.dark-mode input::placeholder {
+    color: #9a9aa5 !important;
+}
+
+
+/* =========================================================
+   PLUS MENU
+   ========================================================= */
+
+.plus-menu {
+    background: #ffffff !important;
+    color: #111111 !important;
+}
+
+.plus-menu button,
+.plus-menu .menu-item {
+    color: #111111 !important;
+    background: transparent;
+}
+
+.plus-menu button:hover,
+.plus-menu .menu-item:hover {
+    background: #f1f1f1 !important;
+}
+
+body.dark-mode .plus-menu {
+    background: #18181f !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .plus-menu button,
+body.dark-mode .plus-menu .menu-item {
+    color: #ffffff !important;
+}
+
+body.dark-mode .plus-menu button:hover,
+body.dark-mode .plus-menu .menu-item:hover {
+    background: #262630 !important;
+}
+
+
+/* =========================================================
+   THINK HARDER
+   ========================================================= */
+
+#thinkBtn.active,
+#thinkBtn[aria-pressed="true"] {
+    background: #111111 !important;
+    color: #ffffff !important;
+    border-color: #111111 !important;
+}
+
+body.dark-mode #thinkBtn.active,
+body.dark-mode #thinkBtn[aria-pressed="true"] {
+    background: #ffffff !important;
+    color: #111111 !important;
+    border-color: #ffffff !important;
+}
+
+
+/* =========================================================
+   MEMORY
+   ========================================================= */
+
+#memoryBtn.active,
+#memoryToggle.active {
+    opacity: 1 !important;
+}
+
+/* Memory text NEVER becomes invisible */
+#memoryBtn,
+#memoryToggle {
+    opacity: 1 !important;
+}
+
+/* Light mode memory */
+body:not(.dark-mode) #memoryBtn,
+body:not(.dark-mode) #memoryToggle {
+    color: #111111 !important;
+}
+
+/* Dark mode memory */
+body.dark-mode #memoryBtn,
+body.dark-mode #memoryToggle {
+    color: #ffffff !important;
+}
+
+
+/* =========================================================
+   PLUGINS PANEL
+   ========================================================= */
+
+.swift-plugins-panel {
+    position: fixed;
+    z-index: 9999;
+
+    top: 50%;
+    left: 50%;
+
+    transform: translate(-50%, -50%) scale(0.96);
+
+    width: min(92vw, 420px);
+    max-height: 80vh;
+
+    overflow-y: auto;
+
+    padding: 20px;
+
+    border-radius: 20px;
+
+    background: #ffffff;
+    color: #111111;
+
+    box-shadow:
+        0 20px 60px rgba(0,0,0,0.25);
+
+    opacity: 0;
+    visibility: hidden;
+
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease,
+        visibility 0.2s ease;
+}
+
+.swift-plugins-panel.active {
+    opacity: 1;
+    visibility: visible;
+
+    transform:
+        translate(-50%, -50%)
+        scale(1);
+}
+
+body.dark-mode .swift-plugins-panel {
+    background: #18181f;
+    color: #ffffff;
+
+    box-shadow:
+        0 20px 60px rgba(0,0,0,0.55);
+}
+
+.swift-plugins-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.swift-plugin-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 14px;
+
+    margin-bottom: 10px;
+
+    border-radius: 14px;
+
+    background: #f4f4f4;
+    color: #111111;
+}
+
+body.dark-mode .swift-plugin-item {
+    background: #25252e;
+    color: #ffffff;
+}
+
+.swift-plugin-close {
+    width: 100%;
+
+    margin-top: 10px;
+    padding: 12px;
+
+    border: 0;
+    border-radius: 12px;
+
+    cursor: pointer;
+
+    background: #111111;
+    color: #ffffff;
+}
+
+body.dark-mode .swift-plugin-close {
+    background: #ffffff;
+    color: #111111;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+    .swift-plugins-panel {
+        width: calc(100vw - 30px);
+        max-height: 75vh;
+        padding: 16px;
+        border-radius: 18px;
+    }
+
+   }
