@@ -3800,3 +3800,120 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
 });
+/* =========================================================
+   MOBILE SIDEBAR TOUCH SWIPE
+   ========================================================= */
+
+const sidebar = document.getElementById("sidebar");
+
+let sidebarTouchStartX = 0;
+let sidebarTouchCurrentX = 0;
+let sidebarIsDragging = false;
+
+if (sidebar) {
+
+    sidebar.addEventListener(
+        "touchstart",
+        (e) => {
+            if (window.innerWidth > 768) return;
+
+            sidebarTouchStartX =
+                e.touches[0].clientX;
+
+            sidebarTouchCurrentX =
+                sidebarTouchStartX;
+
+            sidebarIsDragging = true;
+
+            sidebar.style.transition = "none";
+        },
+        { passive: true }
+    );
+
+
+    sidebar.addEventListener(
+        "touchmove",
+        (e) => {
+            if (
+                !sidebarIsDragging ||
+                window.innerWidth > 768
+            ) return;
+
+            sidebarTouchCurrentX =
+                e.touches[0].clientX;
+
+            const difference =
+                sidebarTouchCurrentX -
+                sidebarTouchStartX;
+
+            /*
+             * Only allow dragging toward the left.
+             */
+            if (difference < 0) {
+
+                const sidebarWidth =
+                    sidebar.offsetWidth;
+
+                const translateX =
+                    Math.max(
+                        -sidebarWidth,
+                        difference
+                    );
+
+                sidebar.style.transform =
+                    `translateX(${translateX}px)`;
+            }
+        },
+        { passive: true }
+    );
+
+
+    sidebar.addEventListener(
+        "touchend",
+        () => {
+            if (
+                !sidebarIsDragging ||
+                window.innerWidth > 768
+            ) return;
+
+            sidebarIsDragging = false;
+
+            sidebar.style.transition =
+                "transform 0.25s ease";
+
+            const difference =
+                sidebarTouchCurrentX -
+                sidebarTouchStartX;
+
+            const threshold = 80;
+
+            /*
+             * Swipe left → close sidebar
+             */
+            if (difference < -threshold) {
+
+                sidebar.classList.remove("open");
+                sidebar.classList.remove("active");
+                sidebar.classList.remove("show");
+
+                sidebar.style.transform =
+                    "translateX(-100%)";
+
+            } else {
+
+                /*
+                 * Not enough swipe → return open
+                 */
+                sidebar.style.transform =
+                    "translateX(0)";
+            }
+
+            setTimeout(() => {
+
+                sidebar.style.transform = "";
+
+            }, 300);
+        },
+        { passive: true }
+    );
+}
